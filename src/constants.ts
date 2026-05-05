@@ -1,0 +1,22 @@
+export const NEPAL_CITIES = [
+  'Birgunj',
+  'Kathmandu',
+  'Pokhara',
+  'Lalitpur',
+  'Bharatpur',
+  'Biratnagar',
+  'Janakpur',
+  'Ghorahi',
+  'Hetauda',
+  'Dhangadhi',
+  'Tulsipur',
+  'Itahari',
+  'Butwal',
+  'Dharan',
+  'Bhimdatta',
+  'Kalaiya',
+  'Nepalgunj',
+  'Madhyapur Thimi',
+  'Vyas',
+  'Lumbini'
+].sort();

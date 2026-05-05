@@ -1,0 +1,79 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "A product available for sale",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "category": { "type": "string" },
+        "image": { "type": "string" },
+        "rating": { "type": "number" },
+        "numReviews": { "type": "number" },
+        "stock": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "price", "stock", "image"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "A customer review for a product",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "rating": { "type": "number" },
+        "comment": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "rating", "comment", "createdAt"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "A customer order",
+      "type": "object",
+      "properties": {
+        "customerId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "items": { "type": "array" },
+        "total": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "shipped", "delivered", "cancelled"] },
+        "method": { "type": "string", "enum": ["COD"] },
+        "address": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["customerId", "items", "total", "status", "method", "address", "createdAt"]
+    },
+    "User": {
+      "title": "User",
+      "description": "A user profile",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "admin"] }
+      },
+      "required": ["name", "email", "role"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Global collection of products"
+    },
+    "/products/{productId}/reviews/{reviewId}": {
+      "schema": "Review",
+      "description": "Reviews for a specific product"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Customer orders"
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    }
+  }
+}
