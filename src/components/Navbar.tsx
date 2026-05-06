@@ -38,7 +38,7 @@ export default function Navbar({ cartCount }: { cartCount: number }) {
   };
 
   return (
-    <header className="sticky top-0 z-50 shadow-sm">
+    <header className="sticky top-0 z-50 shadow-sm w-full overflow-x-hidden">
       {/* Top Utility Bar */}
       <div className="bg-daraz-bg py-1.5 px-6 hidden md:block border-b border-neutral-200">
         <div className="max-w-7xl mx-auto flex justify-between items-center text-[11px] font-bold text-neutral-600 uppercase tracking-tight">

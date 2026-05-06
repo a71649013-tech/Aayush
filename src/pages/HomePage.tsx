@@ -35,7 +35,7 @@ export default function HomePage({ products }: { products: Product[] }) {
   ];
 
   return (
-    <div className="bg-daraz-bg min-h-screen">
+    <div className="bg-daraz-bg min-h-screen overflow-x-hidden">
       {/* Promo Bar */}
       <div className="bg-neutral-900 text-white py-2 overflow-hidden">
         <motion.div 
@@ -73,19 +73,19 @@ export default function HomePage({ products }: { products: Product[] }) {
             
             {/* Main Carousel / Banner */}
             <div className="col-span-12 md:col-span-9 pt-4">
-              <div className="relative h-64 sm:h-auto sm:aspect-[21/9] rounded-sm overflow-hidden bg-neutral-200">
+              <div className="relative h-48 sm:h-64 md:h-96 rounded-sm overflow-hidden bg-neutral-200">
                 <img 
                   src="https://images.unsplash.com/photo-1621251319760-49666c1b3f9c?q=80&w=2070&auto=format&fit=crop" 
                   alt="Banner" 
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"
                 />
-                <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent flex flex-col justify-center px-6 sm:px-12">
-                  <span className="text-white text-[9px] sm:text-xs font-bold uppercase tracking-widest bg-daraz-orange self-start px-2 py-0.5 rounded-sm mb-2 text-shadow">New Season</span>
-                  <h2 className="text-white text-2xl sm:text-4xl md:text-6xl font-black italic tracking-tighter mb-4 leading-tight sm:leading-[0.9] uppercase drop-shadow-2xl">
+                <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/20 to-transparent flex flex-col justify-center px-4 sm:px-12">
+                  <span className="text-white text-[8px] sm:text-xs font-bold uppercase tracking-widest bg-daraz-orange self-start px-2 py-0.5 rounded-sm mb-1 sm:mb-2 shadow-sm">New Season</span>
+                  <h2 className="text-white text-xl sm:text-4xl md:text-6xl font-black italic tracking-tighter mb-2 sm:mb-4 leading-tight sm:leading-none uppercase">
                     SALE <br /><span className="text-daraz-orange">IS GOING ON</span>
                   </h2>
-                  <Link to="/?category=Handicrafts" className="bg-daraz-orange text-white px-5 sm:px-6 py-2 sm:py-2.5 rounded-sm font-bold text-[10px] sm:text-sm hover:bg-orange-700 transition-colors self-start uppercase">Explore Collection</Link>
+                  <Link to="/?category=Handicrafts" className="bg-daraz-orange text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-sm font-bold text-[9px] sm:text-sm hover:bg-orange-700 transition-colors self-start uppercase">Explore Collection</Link>
                 </div>
               </div>
             </div>
