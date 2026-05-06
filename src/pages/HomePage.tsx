@@ -81,9 +81,9 @@ export default function HomePage({ products }: { products: Product[] }) {
                   referrerPolicy="no-referrer"
                 />
                 <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent flex flex-col justify-center px-12">
-                  <span className="text-white text-xs font-bold uppercase tracking-widest bg-daraz-orange self-start px-2 py-0.5 rounded-sm mb-2">New Arrival</span>
-                  <h2 className="text-white text-4xl font-black italic tracking-tighter mb-4 leading-none uppercase">ARTISTRY OF <br /><span className="text-daraz-orange">THE HIMALAYAS</span></h2>
-                  <Link to="/?category=Handicrafts" className="bg-daraz-orange text-white px-6 py-2.5 rounded-sm font-bold text-sm hover:bg-orange-700 transition-colors self-start uppercase">Shop Now</Link>
+                  <span className="text-white text-xs font-bold uppercase tracking-widest bg-daraz-orange self-start px-2 py-0.5 rounded-sm mb-2">New Season</span>
+                  <h2 className="text-white text-6xl font-black italic tracking-tighter mb-4 leading-[0.85] uppercase">SALE <br /><span className="text-daraz-orange">IS GOING ON</span></h2>
+                  <Link to="/?category=Handicrafts" className="bg-daraz-orange text-white px-6 py-2.5 rounded-sm font-bold text-sm hover:bg-orange-700 transition-colors self-start uppercase">Explore Collection</Link>
                 </div>
               </div>
             </div>
