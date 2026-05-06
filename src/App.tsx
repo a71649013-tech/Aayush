@@ -73,7 +73,7 @@ export default function App() {
 
   return (
     <Router>
-      <div className="min-h-screen bg-neutral-50 font-sans text-neutral-900 md:border-x md:border-neutral-200 max-w-7xl mx-auto md:shadow-2xl overflow-x-hidden">
+      <div className="min-h-screen w-full bg-neutral-50 font-sans text-neutral-900 md:border-x md:border-neutral-200 max-w-7xl mx-auto md:shadow-2xl overflow-x-hidden relative">
         <Navbar cartCount={cart.reduce((acc, item) => acc + item.quantity, 0)} />
         <main className="pb-20">
           <Routes>
