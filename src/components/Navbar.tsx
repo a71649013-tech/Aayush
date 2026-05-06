@@ -1,15 +1,21 @@
 import React, { useState } from 'react';
 import { ShoppingCart, Search, User, Menu, X, Landmark, Globe, Smartphone, LogOut } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useFirebase } from '../context/FirebaseContext';
 import { logout } from '../lib/firebase';
 
 export default function Navbar({ cartCount }: { cartCount: number }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [search, setSearch] = useState('');
+  const [searchParams] = useSearchParams();
+  const initialSearch = searchParams.get('q') || '';
+  const [search, setSearch] = useState(initialSearch);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const navigate = useNavigate();
   const { user } = useFirebase();
+  
+  React.useEffect(() => {
+    setSearch(searchParams.get('q') || '');
+  }, [searchParams]);
 
   React.useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -26,7 +32,8 @@ export default function Navbar({ cartCount }: { cartCount: number }) {
     e.preventDefault();
     if (search.trim()) {
       navigate(`/?q=${encodeURIComponent(search.trim())}`);
-      setSearch('');
+    } else {
+      navigate('/');
     }
   };
 
