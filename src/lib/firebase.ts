@@ -1,5 +1,15 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { 
+  getAuth, 
+  GoogleAuthProvider, 
+  signInWithPopup, 
+  signOut, 
+  setPersistence, 
+  browserLocalPersistence,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  updateProfile
+} from 'firebase/auth';
 import { 
   getFirestore, 
   initializeFirestore,
@@ -29,6 +39,27 @@ export const auth = getAuth();
 setPersistence(auth, browserLocalPersistence).catch(console.error);
 
 const googleProvider = new GoogleAuthProvider();
+
+export const registerWithEmail = async (email: string, password: string, name: string) => {
+  try {
+    const result = await createUserWithEmailAndPassword(auth, email, password);
+    await updateProfile(result.user, { displayName: name });
+    return result.user;
+  } catch (error) {
+    console.error("Registration failed:", error);
+    throw error;
+  }
+};
+
+export const loginWithEmail = async (email: string, password: string) => {
+  try {
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    return result.user;
+  } catch (error) {
+    console.error("Login failed:", error);
+    throw error;
+  }
+};
 
 export const signInWithGoogle = async () => {
   try {

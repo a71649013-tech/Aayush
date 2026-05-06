@@ -7,6 +7,8 @@ import { motion } from 'motion/react';
 import { AdPlacement } from '../components/AdPlacement';
 import { useFirebase } from '../context/FirebaseContext';
 
+import { CATEGORIES } from '../constants';
+
 export default function HomePage({ products }: { products: Product[] }) {
   const { user } = useFirebase();
   const [searchParams] = useSearchParams();
@@ -37,18 +39,18 @@ export default function HomePage({ products }: { products: Product[] }) {
   return (
     <div className="bg-daraz-bg min-h-screen overflow-x-hidden">
       {/* Promo Bar */}
-      <div className="bg-neutral-900 text-white py-1.5 overflow-hidden w-full relative">
+      <div className="bg-neutral-900 text-white py-1 overflow-hidden w-full relative border-b border-white/5">
         <div className="flex whitespace-nowrap animate-marquee">
-          <div className="flex gap-12 text-[9px] font-bold uppercase tracking-[0.3em] px-4">
-            <span>FREE SHIPPING ON ALL HANDICRAFT ORDERS OVER रू5000</span>
-            <span>• NEW ARRIVALS: ORGANIC TEA FROM ILAM</span>
-            <span>• SECURE CASH ON DELIVERY AVAILABLE NATIONWIDE</span>
+          <div className="flex gap-8 text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.2em] px-4">
+            <span>FREE SHIPPING OVER रू5000</span>
+            <span>• ORGANIC TEA FROM ILAM</span>
+            <span>• CASH ON DELIVERY</span>
             <span>• SUPPORT LOCAL ARTISANS</span>
           </div>
-          <div className="flex gap-12 text-[9px] font-bold uppercase tracking-[0.3em] px-4">
-            <span>FREE SHIPPING ON ALL HANDICRAFT ORDERS OVER रू5000</span>
-            <span>• NEW ARRIVALS: ORGANIC TEA FROM ILAM</span>
-            <span>• SECURE CASH ON DELIVERY AVAILABLE NATIONWIDE</span>
+          <div className="flex gap-8 text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.2em] px-4">
+            <span>FREE SHIPPING OVER रू5000</span>
+            <span>• ORGANIC TEA FROM ILAM</span>
+            <span>• CASH ON DELIVERY</span>
             <span>• SUPPORT LOCAL ARTISANS</span>
           </div>
         </div>
@@ -56,15 +58,16 @@ export default function HomePage({ products }: { products: Product[] }) {
 
       {/* Hero / Banner System */}
       {!categoryFilter && !searchQuery && (
-        <section className="bg-white pb-6">
-          <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-12 gap-4">
+        <section className="bg-white pb-4 md:pb-6">
+          <div className="max-w-7xl mx-auto px-4 md:px-6 grid grid-cols-1 md:grid-cols-12 gap-0 md:gap-4">
             {/* Sidebar Categories */}
             <div className="hidden md:block col-span-3 border-r border-neutral-100 pr-4">
               <ul className="space-y-2 py-4">
-                {['Electronic Devices', 'Handicrafts', 'Home & Lifestyle', 'Groceries', 'Health & Beauty', 'Fashion', 'Sports & Outdoor'].map((cat) => (
-                  <li key={cat} className="flex justify-between items-center text-xs font-medium text-neutral-600 hover:text-daraz-orange cursor-pointer transition-colors group">
-                    <Link to={`/?category=${cat}`} className="w-full h-full flex justify-between items-center">
-                      {cat} <ChevronRight size={12} className="opacity-0 group-hover:opacity-100" />
+                {CATEGORIES.map((cat) => (
+                  <li key={cat.name} className="flex justify-between items-center text-xs font-medium text-neutral-600 hover:text-daraz-orange cursor-pointer transition-colors group">
+                    <Link to={`/?category=${cat.name}`} className="w-full h-full flex items-center gap-3 py-1 uppercase tracking-tighter">
+                      <span className="text-neutral-400 group-hover:text-daraz-orange transition-colors">{cat.icon}</span>
+                      {cat.name}
                     </Link>
                   </li>
                 ))}
@@ -76,20 +79,20 @@ export default function HomePage({ products }: { products: Product[] }) {
             </div>
             
             {/* Main Carousel / Banner */}
-            <div className="col-span-12 md:col-span-9 pt-4">
-              <div className="relative h-48 sm:h-64 md:h-96 rounded-sm overflow-hidden bg-neutral-200">
+            <div className="col-span-12 md:col-span-9 pt-2 md:pt-4">
+              <div className="relative h-40 sm:h-64 md:h-96 rounded-sm overflow-hidden bg-neutral-200">
                 <img 
                   src="https://images.unsplash.com/photo-1621251319760-49666c1b3f9c?q=80&w=2070&auto=format&fit=crop" 
                   alt="Banner" 
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"
                 />
-                <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/20 to-transparent flex flex-col justify-center px-6 sm:px-12">
-                  <span className="text-white text-[8px] sm:text-xs font-bold uppercase tracking-widest bg-daraz-orange self-start px-2 py-0.5 rounded-sm mb-1 sm:mb-2 shadow-sm">New Season</span>
-                  <h2 className="text-white text-2xl sm:text-4xl md:text-6xl font-black italic tracking-tighter mb-2 sm:mb-4 leading-[0.9] sm:leading-none uppercase">
+                <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/10 to-transparent flex flex-col justify-center px-6 sm:px-12">
+                  <span className="text-white text-[7px] sm:text-xs font-bold uppercase tracking-widest bg-daraz-orange self-start px-2 py-0.5 rounded-sm mb-1 shadow-sm">New Season</span>
+                  <h2 className="text-white text-[1.4rem] sm:text-4xl md:text-6xl font-black italic tracking-tighter mb-2 sm:mb-4 leading-[0.85] sm:leading-none uppercase">
                     SALE <br /><span className="text-daraz-orange">IS GOING ON</span>
                   </h2>
-                  <Link to="/?category=Handicrafts" className="bg-daraz-orange text-white px-5 sm:px-6 py-2 sm:py-2.5 rounded-sm font-bold text-[10px] sm:text-sm hover:bg-orange-700 transition-colors self-start uppercase">Explore Collection</Link>
+                  <Link to="/?category=Handicrafts" className="bg-daraz-orange text-white px-4 sm:px-6 py-1.5 sm:py-2.5 rounded-sm font-bold text-[9px] sm:text-sm hover:bg-orange-700 transition-colors self-start uppercase">Explore Collection</Link>
                 </div>
               </div>
             </div>
@@ -191,7 +194,7 @@ export default function HomePage({ products }: { products: Product[] }) {
           <section>
             <h2 className="text-[14px] font-black uppercase tracking-widest text-neutral-800 mb-6 flex justify-between items-center bg-white p-4 rounded-sm">
               Categories
-              <Link to="/" className="text-[10px] font-black text-daraz-orange hover:underline">View More</Link>
+              <Link to="/categories" className="text-[10px] font-black text-daraz-orange hover:underline">View More</Link>
             </h2>
             <div className="grid grid-cols-4 md:grid-cols-8 gap-px bg-neutral-100 border border-neutral-100 rounded-sm overflow-hidden">
                {[

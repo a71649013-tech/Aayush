@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, Smartphone, ArrowRight } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { registerWithEmail } from '../lib/firebase';
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -10,13 +11,31 @@ export default function RegisterPage() {
     password: '',
     phone: ''
   });
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, this would handle registration
-    alert('Registration successful! Please login.');
-    navigate('/login');
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      setError(null);
+      await registerWithEmail(formData.email, formData.password, formData.name);
+      navigate('/');
+    } catch (err: any) {
+      if (err.code === 'auth/email-already-in-use') {
+        setError('This email is already registered.');
+      } else {
+        setError('Registration failed. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -82,7 +101,7 @@ export default function RegisterPage() {
                 <input 
                   type="password" 
                   required
-                  placeholder="Min. 8 characters"
+                  placeholder="Min. 6 characters"
                   className="w-full bg-neutral-50 border border-neutral-200 rounded-sm py-2.5 px-4 pl-10 text-sm focus:bg-white focus:border-daraz-orange outline-none transition-all"
                   value={formData.password}
                   onChange={(e) => setFormData({...formData, password: e.target.value})}
@@ -91,11 +110,20 @@ export default function RegisterPage() {
               </div>
             </div>
 
+            {error && <p className="text-[10px] text-red-500 font-bold uppercase">{error}</p>}
+
             <button 
               type="submit"
-              className="w-full bg-daraz-orange text-white py-3 rounded-sm font-bold uppercase text-xs tracking-widest hover:opacity-90 transition-all flex items-center justify-center gap-2 group mt-6"
+              disabled={loading}
+              className="w-full bg-daraz-orange text-white py-3 rounded-sm font-bold uppercase text-xs tracking-widest hover:opacity-90 disabled:opacity-50 transition-all flex items-center justify-center gap-2 group mt-6"
             >
-              Sign Up <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+              {loading ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <>
+                  Sign Up <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
             </button>
           </form>
 

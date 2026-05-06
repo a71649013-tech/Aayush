@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { ShoppingCart, Search, User, Menu, X, Landmark, Globe, Smartphone, LogOut } from 'lucide-react';
+import { ShoppingCart, Search, User as UserIcon, Menu, X, Landmark, Globe, Smartphone, LogOut } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useFirebase } from '../context/FirebaseContext';
 import { logout } from '../lib/firebase';
+
+import { User } from '../types';
 
 export default function Navbar({ cartCount }: { cartCount: number }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -90,22 +92,18 @@ export default function Navbar({ cartCount }: { cartCount: number }) {
 
           <div className="flex items-center gap-2 md:gap-8 shrink-0">
             {user ? (
-              <div className="flex items-center gap-4">
-                <div className="hidden lg:block text-right">
-                  <p className="text-[10px] text-neutral-500 font-bold uppercase leading-none italic">Welcome</p>
-                  <p className="text-xs font-black leading-none mt-1 truncate max-w-[100px] uppercase text-daraz-orange tracking-tighter">{user.name}</p>
+              <Link to="/profile" className="flex items-center gap-2 group transition-all">
+                <div className="w-10 h-10 bg-daraz-orange/10 rounded-full flex items-center justify-center text-daraz-orange group-hover:bg-daraz-orange group-hover:text-white transition-all">
+                  <UserIcon size={20} />
                 </div>
-                <button 
-                  onClick={() => logout()}
-                  className="p-2 hover:bg-neutral-100 rounded-full text-neutral-600 hover:text-daraz-orange transition-all"
-                  title="Logout"
-                >
-                  <LogOut size={20} />
-                </button>
-              </div>
+                <div className="hidden lg:flex flex-col">
+                  <p className="text-[10px] text-neutral-500 font-bold uppercase leading-none italic">Profile</p>
+                  <p className="text-xs font-black leading-none mt-1 truncate max-w-[100px] uppercase text-neutral-800 tracking-tighter group-hover:text-daraz-orange transition-colors">{user.name}</p>
+                </div>
+              </Link>
             ) : (
               <Link to="/login" className="flex items-center gap-2 hover:text-daraz-orange transition-colors group">
-                <User size={24} className="text-neutral-700 group-hover:text-daraz-orange" />
+                <UserIcon size={24} className="text-neutral-700 group-hover:text-daraz-orange" />
                 <div className="hidden lg:block text-left">
                   <p className="text-[10px] text-neutral-500 font-bold uppercase leading-none">Hello, Sign in</p>
                   <p className="text-xs font-bold leading-none mt-1">Accounts</p>
@@ -113,7 +111,7 @@ export default function Navbar({ cartCount }: { cartCount: number }) {
               </Link>
             )}
             
-            <Link to="/cart" className="relative group">
+            <Link to="/cart" className="relative group flex md:hidden lg:flex">
               <ShoppingCart size={28} className="text-neutral-700 group-hover:text-daraz-orange transition-colors" />
               {cartCount > 0 && (
                 <span className="absolute -top-1 -right-2 bg-daraz-orange text-white text-[10px] font-bold h-5 w-5 flex items-center justify-center rounded-full border-2 border-white">
@@ -121,26 +119,19 @@ export default function Navbar({ cartCount }: { cartCount: number }) {
                 </span>
               )}
             </Link>
-
-            <button 
-              className="md:hidden p-1 text-neutral-700"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
-            </button>
           </div>
         </div>
 
         {/* Mobile Search - Only visible on small screens */}
-        <form onSubmit={handleSearch} className="md:hidden mt-4 relative">
+        <form onSubmit={handleSearch} className="md:hidden mt-3 relative px-1">
           <input 
             type="text" 
             placeholder="Search in Nepali Mart..." 
-            className="w-full bg-neutral-100 rounded-sm py-2.5 px-4 text-sm outline-none pr-10 focus:ring-1 focus:ring-daraz-orange transition-all"
+            className="w-full bg-neutral-100 rounded-full py-2 px-4 text-sm outline-none pr-10 focus:ring-1 focus:ring-daraz-orange transition-all border border-neutral-200"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <button type="submit" className="absolute right-0 top-0 h-full w-10 flex items-center justify-center text-daraz-orange">
+          <button type="submit" className="absolute right-3 top-0 h-full w-10 flex items-center justify-center text-daraz-orange">
             <Search size={18} />
           </button>
         </form>

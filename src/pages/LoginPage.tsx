@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, ShieldAlert, LogIn } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { signInWithGoogle } from '../lib/firebase';
+import { signInWithGoogle, loginWithEmail } from '../lib/firebase';
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -10,22 +10,38 @@ export default function LoginPage() {
     password: ''
   });
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleGoogleLogin = async () => {
     try {
+      setLoading(true);
       setError(null);
       await signInWithGoogle();
       navigate('/');
     } catch (err) {
       setError('Google login failed.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Keep internal logic as fallback or just alert
-    alert('Standard login is currently disabled. Please use Google Login.');
+    try {
+      setLoading(true);
+      setError(null);
+      await loginWithEmail(formData.email, formData.password);
+      navigate('/');
+    } catch (err: any) {
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        setError('Invalid email or password.');
+      } else {
+        setError('Login failed. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -42,9 +58,15 @@ export default function LoginPage() {
           <div className="space-y-4">
             <button 
               onClick={handleGoogleLogin}
-              className="w-full bg-neutral-900 text-white py-3 rounded-sm font-bold uppercase text-xs tracking-widest hover:opacity-90 transition-all flex items-center justify-center gap-3 mb-6"
+              disabled={loading}
+              className="w-full bg-neutral-900 text-white py-3 rounded-sm font-bold uppercase text-xs tracking-widest hover:opacity-90 disabled:opacity-50 transition-all flex items-center justify-center gap-3 mb-6"
             >
-              <LogIn size={18} /> Sign In with Google
+              {loading ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <LogIn size={18} />
+              )}
+              Sign In with Google
             </button>
 
             <div className="relative flex items-center gap-4 my-8">
@@ -91,9 +113,16 @@ export default function LoginPage() {
 
               <button 
                 type="submit"
-                className="w-full bg-daraz-orange text-white py-3 rounded-sm font-bold uppercase text-xs tracking-widest hover:opacity-90 transition-all flex items-center justify-center gap-2 group mt-6"
+                disabled={loading}
+                className="w-full bg-daraz-orange text-white py-3 rounded-sm font-bold uppercase text-xs tracking-widest hover:opacity-90 disabled:opacity-50 transition-all flex items-center justify-center gap-2 group mt-6"
               >
-                Sign In <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                {loading ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>
+                    Sign In <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                  </>
+                )}
               </button>
             </form>
           </div>

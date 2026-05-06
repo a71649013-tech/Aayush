@@ -10,6 +10,7 @@
 
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { useFirebase } from './context/FirebaseContext';
 import Navbar from './components/Navbar';
 import { Footer } from './components/Footer';
 import HomePage from './pages/HomePage';
@@ -17,14 +18,18 @@ import ProductPage from './pages/ProductPage';
 import CartPage from './pages/CartPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import ProfilePage from './pages/ProfilePage';
+import CategoriesPage from './pages/CategoriesPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminDashboard from './pages/AdminDashboard';
-import { CartItem, Product } from './types';
+import MobileBottomNav from './components/MobileBottomNav';
 import { productService } from './services/productService';
+import { CartItem, Product } from './types';
 
 export default function App() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const { user, loading } = useFirebase();
 
   useEffect(() => {
     // Seed and Subscribe
@@ -71,11 +76,21 @@ export default function App() {
     });
   };
 
+  const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="w-12 h-12 border-4 border-daraz-orange border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
   return (
     <Router>
-      <div className="min-h-screen w-full bg-neutral-50 font-sans text-neutral-900 md:border-x md:border-neutral-200 max-w-7xl mx-auto md:shadow-2xl overflow-x-hidden relative">
-        <Navbar cartCount={cart.reduce((acc, item) => acc + item.quantity, 0)} />
-        <main className="pb-20">
+      <div className="min-h-screen w-full bg-neutral-50 font-sans text-neutral-900 md:border-x md:border-neutral-200 max-w-7xl mx-auto md:shadow-2xl overflow-x-hidden relative flex flex-col">
+        <Navbar cartCount={cartCount} />
+        <main className="flex-1 pb-20 md:pb-0">
           <Routes>
             <Route path="/" element={<HomePage products={products} />} />
             <Route 
@@ -88,6 +103,8 @@ export default function App() {
             />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/profile" element={<ProfilePage user={user} />} />
+            <Route path="/categories" element={<CategoriesPage />} />
             <Route path="/admin-login" element={<AdminLoginPage />} />
             <Route 
               path="/admin" 
@@ -104,6 +121,7 @@ export default function App() {
         </main>
         
         <Footer />
+        <MobileBottomNav cartCount={cartCount} />
       </div>
     </Router>
   );
