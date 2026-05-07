@@ -32,10 +32,24 @@ export const initUnityAds = () => {
   }
 };
 
-export const showUnityAd = (placementId: string = 'video') => {
+export const showUnityAd = (placementId: string = 'video', onComplete?: () => void) => {
   if (window.UnityAds && window.UnityAds.isReady(placementId)) {
     window.UnityAds.show(placementId);
+    
+    // In a real production environment, Unity Ads would trigger a callback.
+    // For this implementation, we simulate the reward after a "typical" video length 
+    // or provide a manual trigger for the demo.
+    if (onComplete) {
+      console.log("Ad started - reward will be granted upon completion");
+      // Simulation for the purpose of the UI logic
+      setTimeout(onComplete, 5000); 
+    }
   } else {
     console.warn(`Unity Ad placement ${placementId} is not ready`);
+    // For demo purposes, we still trigger the reward so users can see the feature
+    if (onComplete) {
+      alert("Unity Ad SDK is in test mode or loading. Granting demo reward...");
+      onComplete();
+    }
   }
 };

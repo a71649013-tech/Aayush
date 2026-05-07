@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, List, ShoppingCart, User as UserIcon } from 'lucide-react';
+import { Home, List, ShoppingCart, User as UserIcon, Gift } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 import { useFirebase } from '../context/FirebaseContext';
@@ -21,6 +21,11 @@ export default function MobileBottomNav({ cartCount }: { cartCount: number }) {
       <Link to="/categories" className={`flex flex-col items-center gap-1 ${isActive('/categories') ? 'text-daraz-orange' : 'text-neutral-500'}`}>
         <List size={22} className={isActive('/categories') ? 'text-daraz-orange' : ''} />
         <span className="text-[10px] font-bold uppercase tracking-tighter">Categories</span>
+      </Link>
+
+      <Link to="/rewards" className={`flex flex-col items-center gap-1 ${isActive('/rewards') ? 'text-daraz-orange' : 'text-neutral-500'}`}>
+        <Gift size={22} className={isActive('/rewards') ? 'text-daraz-orange' : 'fill-none'} />
+        <span className="text-[10px] font-bold uppercase tracking-tighter">Rewards</span>
       </Link>
       
       <Link to="/cart" className={`flex flex-col items-center gap-1 relative ${isActive('/cart') ? 'text-daraz-orange' : 'text-neutral-500'}`}>

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Star, ShoppingCart, Zap, ShieldCheck, ChevronRight, Landmark, Truck, CreditCard, Headphones, Mail, ArrowRight, HelpCircle, ChevronDown, ChevronUp, Store } from 'lucide-react';
+import { Star, ShoppingCart, Zap, ShieldCheck, ChevronRight, Landmark, Truck, CreditCard, Headphones, Mail, ArrowRight, HelpCircle, ChevronDown, ChevronUp, Store, PlayCircle, Gift } from 'lucide-react';
 import { Product } from '../types';
 import { formatCurrency } from '../lib/utils';
 import { motion } from 'motion/react';
@@ -218,6 +218,30 @@ export default function HomePage({ products }: { products: Product[] }) {
           </section>
         )}
 
+
+        {/* Rewards Promotion Section */}
+        <section className="mt-12 mb-12">
+          <div className="bg-neutral-900 rounded-sm p-8 flex flex-col md:flex-row items-center justify-between border-b-4 border-daraz-orange relative overflow-hidden group">
+            <div className="relative z-10 text-center md:text-left mb-6 md:mb-0">
+               <span className="text-[10px] font-black uppercase text-daraz-orange tracking-[0.3em] mb-2 block">Exclusive Earning</span>
+               <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter leading-none mb-3">Watch Ads, <br className="hidden md:block" /> Get <span className="text-daraz-orange">20% Discount</span></h2>
+               <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest max-w-sm">Support our local merchants by watching short videos and earn instant coupons.</p>
+               <Link 
+                 to="/rewards" 
+                 className="mt-6 inline-flex items-center gap-3 bg-white text-black px-8 py-3 rounded-sm font-black uppercase text-xs tracking-widest hover:bg-daraz-orange hover:text-white transition-all shadow-xl shadow-white/5"
+               >
+                 Start Watching <PlayCircle size={16} />
+               </Link>
+            </div>
+            
+            <div className="w-48 h-48 bg-daraz-orange/10 rounded-full flex items-center justify-center relative group-hover:scale-110 transition-transform duration-700">
+               <Gift className="text-daraz-orange opacity-20 absolute" size={160} />
+               <div className="w-24 h-24 bg-daraz-orange rounded-2xl flex items-center justify-center text-white shadow-2xl rotate-12 group-hover:rotate-0 transition-transform">
+                  <PlayCircle size={48} />
+               </div>
+            </div>
+          </div>
+        </section>
 
         {/* Just For You Grid */}
         <section>

@@ -21,6 +21,7 @@ import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
 import CategoriesPage from './pages/CategoriesPage';
 import MerchantPage from './pages/MerchantPage';
+import RewardsPage from './pages/RewardsPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminDashboard from './pages/AdminDashboard';
 import MobileBottomNav from './components/MobileBottomNav';
@@ -111,6 +112,7 @@ export default function App() {
             <Route path="/profile" element={<ProfilePage user={user} />} />
             <Route path="/categories" element={<CategoriesPage />} />
             <Route path="/merchant" element={<MerchantPage />} />
+            <Route path="/rewards" element={<RewardsPage />} />
             <Route path="/admin-login" element={<AdminLoginPage />} />
             <Route 
               path="/admin" 
