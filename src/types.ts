@@ -7,7 +7,8 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'user' | 'admin';
+  role: 'user' | 'admin' | 'merchant';
+  isMerchant?: boolean;
 }
 
 export interface Review {
@@ -30,6 +31,9 @@ export interface Product {
   numReviews: number;
   reviews: Review[];
   stock: number;
+  sellerId?: string;
+  sellerName?: string;
+  status?: 'active' | 'pending' | 'rejected';
 }
 
 export interface CartItem extends Product {

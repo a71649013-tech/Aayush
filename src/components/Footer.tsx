@@ -51,7 +51,7 @@ export function Footer() {
               <li><Link to="/" className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest hover:text-daraz-orange">Flash Sale</Link></li>
               <li><Link to="/" className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest hover:text-daraz-orange">Nepali Handicrafts</Link></li>
               <li><Link to="/" className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest hover:text-daraz-orange">Corporate Purchase</Link></li>
-              <li><Link to="/admin" className="text-[10px] font-black text-daraz-orange uppercase tracking-widest hover:underline flex items-center gap-1">
+              <li><Link to="/merchant" className="text-[10px] font-black text-daraz-orange uppercase tracking-widest hover:underline flex items-center gap-1">
                 <Landmark size={12} /> Merchant Center
               </Link></li>
             </ul>

@@ -49,9 +49,9 @@ export default function Navbar({ cartCount }: { cartCount: number }) {
                <Smartphone size={10} /> CS: +977 982-8105337
              </a>
              <span className="text-neutral-300">|</span>
-             {user?.role === 'admin' && (
+             {user && (
                <>
-                 <Link to="/admin" className="text-daraz-orange font-bold hover:underline transition-colors flex items-center gap-1">
+                 <Link to="/merchant" className="text-daraz-orange font-bold hover:underline transition-colors flex items-center gap-1">
                    <Landmark size={10} /> Merchant Center
                  </Link>
                  <span className="text-neutral-300">|</span>

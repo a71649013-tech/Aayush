@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Star, ShoppingCart, Zap, ShieldCheck, ChevronRight, Landmark, Truck, CreditCard, Headphones, Mail, ArrowRight, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Star, ShoppingCart, Zap, ShieldCheck, ChevronRight, Landmark, Truck, CreditCard, Headphones, Mail, ArrowRight, HelpCircle, ChevronDown, ChevronUp, Store } from 'lucide-react';
 import { Product } from '../types';
 import { formatCurrency } from '../lib/utils';
 import { motion } from 'motion/react';
@@ -339,22 +339,22 @@ export default function HomePage({ products }: { products: Product[] }) {
         </section>
       </div>
 
-      {user?.role === 'admin' && (
+      {user && (
         <motion.div 
           initial={{ x: 100, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           className="fixed bottom-10 right-6 z-[100]"
         >
           <Link 
-            to="/admin" 
-            className="flex items-center gap-3 bg-daraz-orange text-white p-4 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all group"
+            to="/merchant" 
+            className="flex items-center gap-3 bg-neutral-900 text-white p-4 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all group border-2 border-daraz-orange/30"
           >
             <div className="flex flex-col text-right">
-              <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-80">Admin access</span>
-              <span className="text-xs font-black uppercase tracking-tighter italic">Merchant Portal</span>
+              <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-80 decoration-daraz-orange decoration-2 underline">{user.isMerchant ? 'Merchant Portal' : 'Start Selling'}</span>
+              <span className="text-xs font-black uppercase tracking-tighter italic">Earn <span className="text-daraz-orange">70%</span> Profit</span>
             </div>
-            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-              <Landmark size={20} />
+            <div className="w-10 h-10 bg-daraz-orange rounded-full flex items-center justify-center text-white">
+              <Store size={20} />
             </div>
           </Link>
         </motion.div>

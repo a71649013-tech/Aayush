@@ -20,10 +20,12 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
 import CategoriesPage from './pages/CategoriesPage';
+import MerchantPage from './pages/MerchantPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminDashboard from './pages/AdminDashboard';
 import MobileBottomNav from './components/MobileBottomNav';
 import { productService } from './services/productService';
+import { initUnityAds } from './services/unityAdsService';
 import { CartItem, Product } from './types';
 
 export default function App() {
@@ -32,6 +34,9 @@ export default function App() {
   const { user, loading } = useFirebase();
 
   useEffect(() => {
+    // Initialize Unity Ads
+    initUnityAds();
+
     // Seed and Subscribe
     productService.seedIfEmpty();
     const unsubscribe = productService.subscribeToProducts((fetched) => {
@@ -105,6 +110,7 @@ export default function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/profile" element={<ProfilePage user={user} />} />
             <Route path="/categories" element={<CategoriesPage />} />
+            <Route path="/merchant" element={<MerchantPage />} />
             <Route path="/admin-login" element={<AdminLoginPage />} />
             <Route 
               path="/admin" 

@@ -7,6 +7,7 @@ import {
   doc, 
   onSnapshot,
   query,
+  where,
   orderBy,
   setDoc,
   serverTimestamp
@@ -59,12 +60,30 @@ export const productService = {
         reviews: [],
         rating: 5,
         numReviews: 0,
+        status: product.status || 'active', // Default to active for now, maybe pending later
         createdAt: serverTimestamp()
       });
       return docRef.id;
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, COLLECTION_NAME);
     }
+  },
+
+  subscribeToSellerProducts(sellerId: string, callback: (products: Product[]) => void) {
+    const q = query(
+      collection(db, COLLECTION_NAME), 
+      where('sellerId', '==', sellerId),
+      orderBy('createdAt', 'desc')
+    );
+    return onSnapshot(q, (snapshot) => {
+      const products = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Product[];
+      callback(products);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, COLLECTION_NAME);
+    });
   },
 
   async updateProduct(id: string, updates: Partial<Product>) {
