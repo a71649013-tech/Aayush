@@ -25,6 +25,7 @@ import RewardsPage from './pages/RewardsPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminDashboard from './pages/AdminDashboard';
 import MobileBottomNav from './components/MobileBottomNav';
+import BannerAd from './components/BannerAd';
 import { productService } from './services/productService';
 import { initUnityAds } from './services/unityAdsService';
 import { CartItem, Product } from './types';
@@ -111,7 +112,7 @@ export default function App() {
           </div>
         )}
         <Navbar cartCount={cartCount} />
-        <main className="flex-1 pb-20 md:pb-0">
+        <main className="flex-1 pb-32 md:pb-20">
           <Routes>
             <Route path="/" element={<HomePage products={products} />} />
             <Route 
@@ -144,6 +145,7 @@ export default function App() {
         </main>
         
         <Footer />
+        <BannerAd />
         <MobileBottomNav cartCount={cartCount} />
       </div>
     </Router>

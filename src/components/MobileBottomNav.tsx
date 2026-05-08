@@ -12,7 +12,7 @@ export default function MobileBottomNav({ cartCount }: { cartCount: number }) {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 px-6 py-2 z-[70] flex justify-between items-center pb-safe">
+    <div className="md:hidden fixed bottom-[54px] left-0 right-0 bg-white border-t border-neutral-200 px-6 py-2 z-[70] flex justify-between items-center shadow-[0_-1px_3px_rgba(0,0,0,0.05)]">
       <Link to="/" className={`flex flex-col items-center gap-1 ${isActive('/') ? 'text-daraz-orange' : 'text-neutral-500'}`}>
         <Home size={22} className={isActive('/') ? 'fill-daraz-orange' : ''} />
         <span className="text-[10px] font-bold uppercase tracking-tighter">Home</span>
