@@ -28,8 +28,10 @@ import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 
-// Use initializeFirestore with forced long polling to bypass potential websocket issues
+// Use initializeFirestore with explicit host and forced long polling to bypass potential websocket issues
 export const db = initializeFirestore(app, {
+  host: 'firestore.googleapis.com',
+  ssl: true,
   experimentalForceLongPolling: true,
 }, firebaseConfig.firestoreDatabaseId);
 
@@ -72,18 +74,6 @@ export const signInWithGoogle = async () => {
 };
 
 export const logout = () => signOut(auth);
-
-// Test Connection
-async function testConnection() {
-  try {
-    await getDocFromServer(doc(db, 'test', 'connection'));
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error("Please check your Firebase configuration.");
-    }
-  }
-}
-testConnection();
 
 export enum OperationType {
   CREATE = 'create',

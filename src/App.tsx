@@ -32,14 +32,24 @@ import { CartItem, Product } from './types';
 export default function App() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const { user, loading } = useFirebase();
+  const { user, loading, connectionError } = useFirebase();
 
   useEffect(() => {
     // Initialize Unity Ads
     initUnityAds();
 
-    // Seed and Subscribe
-    productService.seedIfEmpty();
+    // Check connection and seed
+    const checkConnection = async () => {
+      try {
+        await productService.seedIfEmpty();
+      } catch (err) {
+        console.error("Connectivity issue detected on startup:", err);
+      }
+    };
+    
+    checkConnection();
+
+    // Subscribe
     const unsubscribe = productService.subscribeToProducts((fetched) => {
       setProducts(fetched);
     });
@@ -95,6 +105,11 @@ export default function App() {
   return (
     <Router>
       <div className="min-h-screen w-full bg-neutral-50 font-sans text-neutral-900 md:border-x md:border-neutral-200 max-w-7xl mx-auto md:shadow-2xl overflow-x-hidden relative flex flex-col">
+        {connectionError && (
+          <div className="bg-daraz-orange text-white text-[10px] font-black uppercase tracking-[0.2em] py-2 px-4 text-center sticky top-0 z-[100] border-b border-white/20">
+            Marketplace is in offline mode. Connecting to server...
+          </div>
+        )}
         <Navbar cartCount={cartCount} />
         <main className="flex-1 pb-20 md:pb-0">
           <Routes>

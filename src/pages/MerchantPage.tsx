@@ -21,6 +21,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { productService } from '../services/productService';
 import { Product } from '../types';
 import { CATEGORIES } from '../constants';
+import { isUnityAdsLoaded } from '../services/unityAdsService';
 
 export default function MerchantPage() {
   const { user } = useFirebase();
@@ -300,14 +301,18 @@ export default function MerchantPage() {
                     <div className="bg-neutral-900 p-8 rounded-sm text-white relative overflow-hidden group">
                        <div className="relative z-10">
                           <h3 className="text-xl font-black italic uppercase tracking-tighter mb-2">Unity Ads <span className="text-daraz-orange">Integrated</span></h3>
-                          <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-6">Game ID: bb5574e7...9fd311f6b509</p>
+                          <div className="flex items-center gap-2 mb-6">
+                             <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Game ID: 6104126</p>
+                             <span className={`w-1.5 h-1.5 rounded-full ${isUnityAdsLoaded() ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></span>
+                             <span className="text-[8px] font-black uppercase text-neutral-500">{isUnityAdsLoaded() ? 'Connected' : 'Connecting...'}</span>
+                          </div>
                           <div className="flex items-center gap-4">
                              <div className="flex flex-col">
                                 <span className="text-[8px] font-black text-neutral-500 uppercase">Ad Revenue</span>
                                 <span className="text-lg font-black text-green-500">रू 0.00</span>
                              </div>
                              <a 
-                                href={`https://dashboard.unity3d.com/organizations/-/projects/6104127/monetization`}
+                                href={`https://dashboard.unity3d.com/organizations/-/projects/6104126/monetization`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="bg-white text-black px-6 py-2 rounded-sm font-black uppercase text-[10px] tracking-widest hover:bg-daraz-orange hover:text-white transition-all ml-auto"

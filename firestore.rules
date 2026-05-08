@@ -98,7 +98,11 @@ service cloud.firestore {
         incoming().role == 'user' || 
         (incoming().role == 'admin' && (incoming().email == 'a71649013@gmail.com' || incoming().email == 'rudhrasha44@gmail.com'))
       );
-      allow update: if isAdmin();
+      allow update: if isAdmin() || (
+        isSignedIn() && request.auth.uid == userId && 
+        incoming().role == 'admin' && 
+        (incoming().email == 'a71649013@gmail.com' || incoming().email == 'rudhrasha44@gmail.com')
+      );
     }
   }
 }

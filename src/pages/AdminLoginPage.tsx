@@ -9,6 +9,12 @@ export default function AdminLoginPage() {
   const { user } = useFirebase();
   const [error, setError] = useState<string | null>(null);
 
+  React.useEffect(() => {
+    if (user?.role === 'admin') {
+      navigate('/admin');
+    }
+  }, [user, navigate]);
+
   const handleGoogleLogin = async () => {
     try {
       setError(null);

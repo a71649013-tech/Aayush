@@ -12,7 +12,7 @@ import {
   Zap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { showUnityAd } from '../services/unityAdsService';
+import { showUnityAd, isUnityAdsLoaded } from '../services/unityAdsService';
 
 interface Coupon {
   id: string;
@@ -85,7 +85,10 @@ export default function RewardsPage() {
         <div className="bg-white rounded-sm shadow-xl p-6 border border-neutral-100 mb-8">
           <div className="flex items-center justify-between mb-6">
             <div className="flex flex-col">
-              <span className="text-[10px] font-black uppercase text-neutral-400 tracking-widest">Your Progress</span>
+              <span className="text-[10px] font-black uppercase text-neutral-400 tracking-widest flex items-center gap-2">
+                Your Progress
+                <span className={`w-1 h-1 rounded-full ${isUnityAdsLoaded() ? 'bg-green-500' : 'bg-red-500'}`}></span>
+              </span>
               <span className="text-2xl font-black italic text-neutral-800">{adsWatched} <span className="text-xs uppercase not-italic text-neutral-400">Ads Completed</span></span>
             </div>
             <div className="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center text-daraz-orange">
