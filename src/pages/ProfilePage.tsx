@@ -238,7 +238,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                                   <div className="space-y-2">
                                     {order.items.map((item, idx) => (
                                       <div key={idx} className="flex items-center gap-4 bg-white p-3 rounded-sm border border-neutral-100">
-                                        <img src={item.image} alt={item.name} className="w-10 h-10 object-cover rounded-sm" />
+                                        <img src={item.image || null} alt={item.name} className="w-10 h-10 object-cover rounded-sm" />
                                         <div className="flex-1">
                                           <h5 className="text-[10px] font-bold text-neutral-800 uppercase tracking-tight truncate max-w-[200px]">{item.name}</h5>
                                           <p className="text-[9px] text-neutral-400 font-bold">Qty: {item.quantity} × रू {item.price.toLocaleString()}</p>

@@ -265,7 +265,7 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
                     {products.map((product) => (
                       <tr key={product.id} className="border-b border-neutral-50">
                         <td className="px-4 py-3 border-r border-neutral-50 w-16">
-                          <img src={product.image} className="w-10 h-10 object-cover rounded-sm" alt="" />
+                          <img src={product.image || null} className="w-10 h-10 object-cover rounded-sm" alt="" />
                         </td>
                         <td className="px-4 py-3 font-bold">{product.name}</td>
                         <td className="px-4 py-3 text-daraz-orange font-bold">{formatCurrency(product.price)}</td>
@@ -522,7 +522,7 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
                     {selectedOrder.items.map((item: any, idx: number) => (
                       <div key={idx} className="flex items-center justify-between p-3 border border-neutral-100 rounded-sm">
                         <div className="flex items-center gap-4">
-                           <img src={item.image} alt="" className="w-10 h-10 object-cover rounded-sm" />
+                           <img src={item.image || null} alt="" className="w-10 h-10 object-cover rounded-sm" />
                            <div>
                               <p className="text-sm font-black text-neutral-800 tracking-tight">{item.name}</p>
                               <p className="text-[10px] font-bold text-neutral-400 uppercase">{item.quantity} x {formatCurrency(item.price)}</p>

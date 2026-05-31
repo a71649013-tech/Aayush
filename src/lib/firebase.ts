@@ -73,7 +73,10 @@ export const signInWithGoogle = async () => {
   }
 };
 
-export const logout = () => signOut(auth);
+export const logout = () => {
+  localStorage.removeItem('admin_pin_authenticated');
+  return signOut(auth);
+};
 
 export enum OperationType {
   CREATE = 'create',

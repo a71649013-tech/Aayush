@@ -39,14 +39,21 @@ export const orderService = {
   subscribeToUserOrders(userId: string, callback: (orders: any[]) => void) {
     const q = query(
       collection(db, COLLECTION_NAME), 
-      where('customerId', '==', userId),
-      orderBy('createdAt', 'desc')
+      where('customerId', '==', userId)
     );
     return onSnapshot(q, (snapshot) => {
       const orders = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
+      
+      // Sort client-side by createdAt descending to avoid composite index requirements
+      orders.sort((a: any, b: any) => {
+        const timeA = a.createdAt?.seconds || a.createdAt || 0;
+        const timeB = b.createdAt?.seconds || b.createdAt || 0;
+        return timeB - timeA;
+      });
+      
       callback(orders);
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, COLLECTION_NAME);

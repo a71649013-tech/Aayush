@@ -164,7 +164,7 @@ export default function HomePage({ products }: { products: Product[] }) {
                 <div key={product.id} className="border-r border-b border-neutral-50 group cursor-pointer hover:shadow-xl transition-all bg-white relative">
                   <Link to={`/product/${product.id}`} className="block p-4">
                     <div className="aspect-square relative mb-4 overflow-hidden rounded-sm">
-                      <img src={product.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={product.name} referrerPolicy="no-referrer" />
+                      <img src={product.image || null} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={product.name} referrerPolicy="no-referrer" />
                       <div className="absolute top-2 left-2 bg-daraz-orange text-white text-[9px] font-black px-2 py-1 rounded-sm uppercase italic shadow-lg">Save 15%</div>
                     </div>
                     <div className="space-y-1">
@@ -392,7 +392,7 @@ function ProductCard({ product }: { product: Product }) {
     <div className="bg-white rounded-sm overflow-hidden border border-transparent hover:border-neutral-200 hover:shadow-xl transition-all h-full flex flex-col group relative">
       <Link to={`/product/${product.id}`} className="block relative aspect-square overflow-hidden">
         <img 
-          src={product.image} 
+          src={product.image || null} 
           alt={product.name} 
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
           referrerPolicy="no-referrer"

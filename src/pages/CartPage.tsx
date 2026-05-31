@@ -153,7 +153,7 @@ export default function CartPage({ cart, onRemove, onUpdateQuantity }: {
               className="flex flex-col sm:flex-row gap-6 p-6 bg-white border border-neutral-100 rounded-3xl shadow-lg hover:shadow-xl transition-all"
             >
               <div className="w-full sm:w-40 h-40 rounded-2xl overflow-hidden bg-neutral-50 border border-neutral-100 shrink-0">
-                <img src={item.image} alt={item.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                <img src={item.image || null} alt={item.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
               </div>
               
               <div className="flex-1 flex flex-col justify-between py-2">

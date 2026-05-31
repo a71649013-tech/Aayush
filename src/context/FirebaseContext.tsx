@@ -8,19 +8,57 @@ interface FirebaseContextType {
   user: User | null;
   loading: boolean;
   connectionError: boolean;
+  loginAsPinAdmin: () => void;
+  logoutPinAdmin: () => void;
 }
 
-const FirebaseContext = createContext<FirebaseContextType>({ user: null, loading: true, connectionError: false });
+const FirebaseContext = createContext<FirebaseContextType>({ 
+  user: null, 
+  loading: true, 
+  connectionError: false,
+  loginAsPinAdmin: () => {},
+  logoutPinAdmin: () => {}
+});
 
 export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [connectionError, setConnectionError] = useState(false);
 
+  const loginAsPinAdmin = () => {
+    localStorage.setItem('admin_pin_authenticated', 'true');
+    setUser({
+      id: 'pin-admin',
+      name: 'Store Admin',
+      email: 'admin@nepalimart.com',
+      role: 'admin'
+    });
+  };
+
+  const logoutPinAdmin = () => {
+    localStorage.removeItem('admin_pin_authenticated');
+    setUser(null);
+  };
+
   useEffect(() => {
+    // If authenticated via PIN, lock that in immediately
+    if (localStorage.getItem('admin_pin_authenticated') === 'true') {
+      setUser({
+        id: 'pin-admin',
+        name: 'Store Admin',
+        email: 'admin@nepalimart.com',
+        role: 'admin'
+      });
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       try {
         setConnectionError(false);
+        if (localStorage.getItem('admin_pin_authenticated') === 'true') {
+          return;
+        }
         if (fbUser) {
           const userDocRef = doc(db, 'users', fbUser.uid);
           const userDoc = await getDoc(userDocRef);
@@ -66,7 +104,7 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, []);
 
   return (
-    <FirebaseContext.Provider value={{ user, loading, connectionError }}>
+    <FirebaseContext.Provider value={{ user, loading, connectionError, loginAsPinAdmin, logoutPinAdmin }}>
       {children}
     </FirebaseContext.Provider>
   );

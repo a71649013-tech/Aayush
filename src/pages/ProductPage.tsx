@@ -53,7 +53,7 @@ export default function ProductPage({ products, onAddToCart, onAddReview }: {
           <div className="lg:col-span-4 space-y-4">
             <div className="aspect-square border border-neutral-100 overflow-hidden">
               <img 
-                src={product.image} 
+                src={product.image || null} 
                 className="w-full h-full object-contain" 
                 alt={product.name}
                 referrerPolicy="no-referrer"
@@ -62,7 +62,7 @@ export default function ProductPage({ products, onAddToCart, onAddReview }: {
             <div className="grid grid-cols-4 gap-2">
               {[...Array(4)].map((_, i) => (
                 <div key={i} className="aspect-square border border-neutral-100 cursor-pointer hover:border-daraz-orange">
-                  <img src={product.image} className="w-full h-full object-cover opacity-80" referrerPolicy="no-referrer" alt="" />
+                  <img src={product.image || null} className="w-full h-full object-cover opacity-80" referrerPolicy="no-referrer" alt="" />
                 </div>
               ))}
             </div>
@@ -273,7 +273,7 @@ export default function ProductPage({ products, onAddToCart, onAddReview }: {
                     <p className="text-neutral-600 leading-relaxed italic">{product.description}</p>
                  </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8 border-t border-neutral-100">
-                    <img src={product.image} className="w-full h-64 object-cover rounded-sm" alt="" referrerPolicy="no-referrer" />
+                    <img src={product.image || null} className="w-full h-64 object-cover rounded-sm" alt="" referrerPolicy="no-referrer" />
                     <img src="https://picsum.photos/seed/detail-1/600/400" className="w-full h-64 object-cover rounded-sm" alt="" referrerPolicy="no-referrer" />
                  </div>
               </div>
