@@ -363,7 +363,7 @@ export default function HomePage({ products }: { products: Product[] }) {
         </section>
       </div>
 
-      {user && (
+      {user && (user.role === 'admin' || user.role === 'merchant' || user.isMerchant) && (
         <motion.div 
           initial={{ x: 100, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}

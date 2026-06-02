@@ -47,7 +47,7 @@ export default function MerchantPage() {
       return;
     }
 
-    if (user.role === 'merchant' || user.isMerchant) {
+    if (user.role === 'merchant' || user.isMerchant || user.role === 'admin') {
       const unsubscribe = productService.subscribeToSellerProducts(user.id, (products) => {
         setSellerProducts(products);
         setLoading(false);
@@ -120,66 +120,41 @@ export default function MerchantPage() {
     </div>
   );
 
-  // If NOT a merchant, show onboarding
-  if (user && user.role !== 'merchant' && !user.isMerchant) {
+  // If NOT a merchant or admin, show restricted view
+  if (user && user.role !== 'merchant' && !user.isMerchant && user.role !== 'admin') {
     return (
       <div className="bg-white min-h-screen">
         <div className="max-w-4xl mx-auto px-6 py-12 sm:py-20 flex flex-col items-center text-center">
-          <div className="w-24 h-24 bg-orange-50 rounded-full flex items-center justify-center text-daraz-orange mb-8 animate-bounce">
-            <Store size={48} />
+          <div className="w-24 h-24 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-8 animate-pulse">
+            <AlertCircle size={48} />
           </div>
           <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-4 text-neutral-800">
-            Start Selling on <span className="text-daraz-orange">Nepali Mart</span>
+            Approved <span className="text-daraz-orange">Sellers Only</span>
           </h1>
           <p className="text-sm text-neutral-500 font-bold uppercase tracking-widest max-w-xl leading-relaxed mb-10">
-            Join thousands of local artisans and entrepreneurs. Reach customers across Nepal and grow your business today.
+            Merchant access is restricted. Regular customer accounts are not allowed to sell products on Nepali Mart directly.
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mb-12 text-left">
-            <div className="space-y-3">
-              <div className="w-10 h-10 bg-green-50 text-green-600 rounded-full flex items-center justify-center">
-                <LayoutGrid size={20} />
-              </div>
-              <h3 className="font-black uppercase tracking-tight text-neutral-800">Easy Listing</h3>
-              <p className="text-[10px] font-bold text-neutral-400 uppercase leading-relaxed">List your products in seconds with our simple merchant dashboard.</p>
-            </div>
-            <div className="space-y-3">
-              <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center">
-                 <Truck size={20} />
-              </div>
-              <h3 className="font-black uppercase tracking-tight text-neutral-800">Fast Delivery</h3>
-              <p className="text-[10px] font-bold text-neutral-400 uppercase leading-relaxed">We handle the logistics. You focus on creating amazing products.</p>
-            </div>
-            <div className="space-y-3">
-              <div className="w-10 h-10 bg-orange-50 text-daraz-orange rounded-full flex items-center justify-center">
-                 <DollarSign size={20} />
-              </div>
-              <h3 className="font-black uppercase tracking-tight text-neutral-800">Low Commission</h3>
-              <p className="text-[10px] font-bold text-neutral-400 uppercase leading-relaxed font-black text-daraz-orange">Only 30% platform fee. You keep 70% of every sale!</p>
-            </div>
-          </div>
-
-          <div className="bg-neutral-50 p-6 rounded-sm border border-neutral-100 max-w-md w-full mb-10">
-            <div className="flex items-start gap-4 text-left">
+          <div className="bg-neutral-50 p-6 rounded-sm border border-neutral-100 max-w-md w-full mb-10 text-left">
+            <div className="flex items-start gap-4">
                <AlertCircle className="text-daraz-orange shrink-0 mt-1" size={24} />
                <div className="space-y-2">
-                 <h4 className="text-xs font-black uppercase tracking-tight text-neutral-800">Merchant Agreement</h4>
+                 <h4 className="text-xs font-black uppercase tracking-tight text-neutral-800">Become a Merchant</h4>
                  <p className="text-[10px] font-bold text-neutral-500 leading-relaxed uppercase">
-                   By clicking the button below, you agree to our Merchant Terms of Service. A 30% platform fee applies to all successful transactions.
+                   Your account is NOT approved as a merchant. To start selling, please contact an administrator to authorize and register your store on our platform.
+                 </p>
+                 <p className="text-[10px] font-black text-daraz-orange uppercase">
+                   Support Helpline: +977 982-8105337
                  </p>
                </div>
             </div>
           </div>
 
           <button 
-            onClick={handleBecomeMerchant}
-            disabled={submitting}
-            className="bg-daraz-orange text-white px-12 py-4 rounded-sm font-black uppercase text-sm tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-daraz-orange/20 flex items-center gap-3"
+            onClick={() => navigate('/')}
+            className="bg-neutral-900 text-white px-12 py-4 rounded-sm font-black uppercase text-sm tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center gap-3"
           >
-            {submitting ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : <Store size={20} />}
-            Become a Merchant
+            <ArrowLeft size={16} /> Back to Shop
           </button>
         </div>
       </div>

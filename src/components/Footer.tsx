@@ -1,8 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Facebook, Instagram, Twitter, Youtube, Landmark, Headphones, Smartphone } from 'lucide-react';
+import { useFirebase } from '../context/FirebaseContext';
 
 export function Footer() {
+  const { user } = useFirebase();
   return (
     <footer className="bg-white border-t border-neutral-100 pt-16 pb-8">
       <div className="max-w-7xl mx-auto px-6">
@@ -51,9 +53,11 @@ export function Footer() {
               <li><Link to="/" className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest hover:text-daraz-orange">Flash Sale</Link></li>
               <li><Link to="/" className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest hover:text-daraz-orange">Nepali Handicrafts</Link></li>
               <li><Link to="/" className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest hover:text-daraz-orange">Corporate Purchase</Link></li>
-              <li><Link to="/merchant" className="text-[10px] font-black text-daraz-orange uppercase tracking-widest hover:underline flex items-center gap-1">
-                <Landmark size={12} /> Merchant Center
-              </Link></li>
+              {user && (user.role === 'admin' || user.role === 'merchant' || user.isMerchant) && (
+                <li><Link to="/merchant" className="text-[10px] font-black text-daraz-orange uppercase tracking-widest hover:underline flex items-center gap-1">
+                  <Landmark size={12} /> Merchant Center
+                </Link></li>
+              )}
             </ul>
           </div>
 

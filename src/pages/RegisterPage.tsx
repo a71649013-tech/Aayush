@@ -28,10 +28,13 @@ export default function RegisterPage() {
       await registerWithEmail(formData.email, formData.password, formData.name);
       navigate('/');
     } catch (err: any) {
+      console.error("Registration Error:", err);
       if (err.code === 'auth/email-already-in-use') {
         setError('This email is already registered.');
+      } else if (err.code === 'auth/operation-not-allowed') {
+        setError('Email/Password registration is not enabled in your Firebase Authentication Console. Please enable it in the Firebase Console.');
       } else {
-        setError('Registration failed. Please try again.');
+        setError(`Registration failed: ${err.message || 'Please try again.'}`);
       }
     } finally {
       setLoading(false);

@@ -49,7 +49,7 @@ export default function Navbar({ cartCount }: { cartCount: number }) {
                <Smartphone size={10} /> CS: +977 982-8105337
              </a>
              <span className="text-neutral-300">|</span>
-             {user && (
+             {user && (user.role === 'admin' || user.role === 'merchant' || user.isMerchant) && (
                <>
                  <Link to="/merchant" className="text-daraz-orange font-bold hover:underline transition-colors flex items-center gap-1">
                    <Landmark size={10} /> Merchant Center
@@ -153,9 +153,14 @@ export default function Navbar({ cartCount }: { cartCount: number }) {
         <div className="md:hidden fixed inset-0 z-[60] bg-white pt-20 p-6 flex flex-col gap-6">
           <button className="absolute top-6 right-6" onClick={() => setIsMenuOpen(false)}><X size={32} /></button>
           <Link to="/" className="text-xl font-black italic tracking-tighter uppercase border-b border-neutral-100 pb-4">Home</Link>
-          {user?.role === 'admin' && (
-            <Link to="/admin" className="text-xl font-black italic tracking-tighter text-daraz-orange border-b border-neutral-100 pb-4 flex items-center justify-between">
+          {(user?.role === 'merchant' || user?.isMerchant) && (
+            <Link to="/merchant" className="text-xl font-black italic tracking-tighter text-daraz-orange border-b border-neutral-100 pb-4 flex items-center justify-between" onClick={() => setIsMenuOpen(false)}>
               Merchant Center <Landmark size={24} />
+            </Link>
+          )}
+          {user?.role === 'admin' && (
+            <Link to="/admin" className="text-xl font-black italic tracking-tighter text-red-600 border-b border-neutral-100 pb-4 flex items-center justify-between" onClick={() => setIsMenuOpen(false)}>
+              Admin Console <Landmark size={24} />
             </Link>
           )}
           <Link to="/?category=Handicrafts" className="text-lg font-bold uppercase border-b border-neutral-50 pb-4">Handicrafts</Link>

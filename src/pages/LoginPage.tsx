@@ -19,8 +19,15 @@ export default function LoginPage() {
       setError(null);
       await signInWithGoogle();
       navigate('/');
-    } catch (err) {
-      setError('Google login failed.');
+    } catch (err: any) {
+      console.error("Google Login Error:", err);
+      if (err.code === 'auth/unauthorized-domain') {
+        setError('This domain is not authorized in the Firebase console for Google Sign-In. You need to add this domain to "Authorized domains" under Authentication settings.');
+      } else if (err.code === 'auth/operation-not-allowed') {
+        setError('Google Sign-In is not enabled as a sign-in provider in your Firebase project. Please enable it in the Firebase console.');
+      } else {
+        setError(`Google login failed: ${err.message || err.code || 'Please try again.'}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -34,10 +41,13 @@ export default function LoginPage() {
       await loginWithEmail(formData.email, formData.password);
       navigate('/');
     } catch (err: any) {
+      console.error("Email Login Error:", err);
       if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
         setError('Invalid email or password.');
+      } else if (err.code === 'auth/operation-not-allowed') {
+        setError('Email/Password login is not enabled in your Firebase Authentication Console. Please enable it in the Firebase Console.');
       } else {
-        setError('Login failed. Please try again.');
+        setError(`Login failed: ${err.message || 'Please try again.'}`);
       }
     } finally {
       setLoading(false);
