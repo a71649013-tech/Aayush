@@ -5,6 +5,7 @@ import { formatCurrency, cn } from '../lib/utils';
 import { orderService } from '../services/orderService';
 import { productService } from '../services/productService';
 import { useFirebase } from '../context/FirebaseContext';
+import { ProductImage } from '../components/ProductImage';
 
 export default function AdminDashboard({ products, onAddProduct, onUpdateProduct, onDeleteProduct }: { 
   products: Product[], 
@@ -265,7 +266,7 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
                     {products.map((product) => (
                       <tr key={product.id} className="border-b border-neutral-50">
                         <td className="px-4 py-3 border-r border-neutral-50 w-16">
-                          <img src={product.image || null} className="w-10 h-10 object-cover rounded-sm" alt="" />
+                          <ProductImage src={product.image} alt="" category={product.category} className="w-10 h-10 object-cover rounded-sm" />
                         </td>
                         <td className="px-4 py-3 font-bold">{product.name}</td>
                         <td className="px-4 py-3 text-daraz-orange font-bold">{formatCurrency(product.price)}</td>

@@ -50,7 +50,7 @@ export function Footer() {
             <h3 className="font-black uppercase tracking-widest text-xs text-neutral-900">Marketplace</h3>
             <ul className="space-y-3">
               <li><Link to="/" className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest hover:text-daraz-orange">All Categories</Link></li>
-              <li><Link to="/" className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest hover:text-daraz-orange">Flash Sale</Link></li>
+              <li><Link to="/?category=Organic Tea" className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest hover:text-daraz-orange">Organic Tea</Link></li>
               <li><Link to="/" className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest hover:text-daraz-orange">Nepali Handicrafts</Link></li>
               <li><Link to="/" className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest hover:text-daraz-orange">Corporate Purchase</Link></li>
               {user && (user.role === 'admin' || user.role === 'merchant' || user.isMerchant) && (

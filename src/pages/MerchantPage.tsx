@@ -22,6 +22,7 @@ import { productService } from '../services/productService';
 import { Product } from '../types';
 import { CATEGORIES } from '../constants';
 import { isUnityAdsLoaded } from '../services/unityAdsService';
+import { ProductImage } from '../components/ProductImage';
 
 export default function MerchantPage() {
   const { user } = useFirebase();
@@ -480,7 +481,7 @@ export default function MerchantPage() {
                    <div className="grid grid-cols-1 gap-4">
                       {sellerProducts.map(product => (
                         <div key={product.id} className="bg-white p-4 rounded-sm border border-neutral-100 flex items-center gap-4 group hover:border-daraz-orange/20 transition-all">
-                           <img src={product.image || null} alt={product.name} className="w-16 h-16 object-cover rounded-sm border border-neutral-100" />
+                           <ProductImage src={product.image} alt={product.name} category={product.category} className="w-16 h-16 object-cover rounded-sm border border-neutral-100" />
                            <div className="flex-1">
                               <h4 className="text-xs font-black uppercase tracking-tight text-neutral-800 line-clamp-1">{product.name}</h4>
                               <div className="flex items-center gap-3 mt-1">

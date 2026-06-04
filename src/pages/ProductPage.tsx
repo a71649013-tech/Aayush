@@ -6,6 +6,7 @@ import { formatCurrency, cn } from '../lib/utils';
 import { motion } from 'motion/react';
 import { AdPlacement } from '../components/AdPlacement';
 import { NEPAL_CITIES } from '../constants';
+import { ProductImage } from '../components/ProductImage';
 
 export default function ProductPage({ products, onAddToCart, onAddReview }: { 
   products: Product[], 
@@ -52,17 +53,17 @@ export default function ProductPage({ products, onAddToCart, onAddReview }: {
           {/* Left: Image Gallery */}
           <div className="lg:col-span-4 space-y-4">
             <div className="aspect-square border border-neutral-100 overflow-hidden">
-              <img 
-                src={product.image || null} 
-                className="w-full h-full object-contain" 
+              <ProductImage 
+                src={product.image} 
                 alt={product.name}
-                referrerPolicy="no-referrer"
+                category={product.category}
+                className="w-full h-full object-contain" 
               />
             </div>
             <div className="grid grid-cols-4 gap-2">
               {[...Array(4)].map((_, i) => (
                 <div key={i} className="aspect-square border border-neutral-100 cursor-pointer hover:border-daraz-orange">
-                  <img src={product.image || null} className="w-full h-full object-cover opacity-80" referrerPolicy="no-referrer" alt="" />
+                  <ProductImage src={product.image} alt="" category={product.category} className="w-full h-full object-cover opacity-80" />
                 </div>
               ))}
             </div>
@@ -107,7 +108,7 @@ export default function ProductPage({ products, onAddToCart, onAddReview }: {
                 <span className="text-xs text-neutral-800 font-medium">-20%</span>
               </div>
               <div className="mt-4 flex items-center gap-2 bg-daraz-orange/10 px-2 py-1 inline-flex text-daraz-orange text-[10px] font-bold uppercase rounded-sm">
-                 <Zap size={10} fill="currentColor" /> Flash Sale ends in 02:44:12
+                 Special Offer Active
               </div>
             </div>
 
@@ -273,7 +274,7 @@ export default function ProductPage({ products, onAddToCart, onAddReview }: {
                     <p className="text-neutral-600 leading-relaxed italic">{product.description}</p>
                  </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8 border-t border-neutral-100">
-                    <img src={product.image || null} className="w-full h-64 object-cover rounded-sm" alt="" referrerPolicy="no-referrer" />
+                    <ProductImage src={product.image} alt="" category={product.category} className="w-full h-64 object-cover rounded-sm" />
                     <img src="https://picsum.photos/seed/detail-1/600/400" className="w-full h-64 object-cover rounded-sm" alt="" referrerPolicy="no-referrer" />
                  </div>
               </div>

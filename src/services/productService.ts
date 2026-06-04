@@ -23,7 +23,7 @@ export const productService = {
   async seedIfEmpty() {
     try {
       const querySnapshot = await getDocs(collection(db, COLLECTION_NAME));
-      const hasBrandNewProducts = querySnapshot.docs.some(doc => doc.id === 'daraz-home-1');
+      const hasBrandNewProducts = querySnapshot.docs.some(doc => doc.id === 'daraz-sport-7' && (doc.data() as any).image?.includes('photo-1617135813745'));
       
       if (querySnapshot.empty || !hasBrandNewProducts) {
         console.log('Clearing old mock entries and seeding updated clean background products...');

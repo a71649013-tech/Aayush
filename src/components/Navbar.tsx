@@ -142,9 +142,12 @@ export default function Navbar({ cartCount }: { cartCount: number }) {
         <div className="max-w-7xl mx-auto px-6 py-2 flex gap-8 text-[12px] font-bold text-neutral-600 uppercase tracking-tight">
           <Link to="/" className="hover:text-daraz-orange">Categories</Link>
           <Link to="/?category=Handicrafts" className="hover:text-daraz-orange">Handicrafts</Link>
-          <Link to="/?category=Tea" className="hover:text-daraz-orange">Flash Sale</Link>
-          <Link to="/?category=Electronics" className="hover:text-daraz-orange">New Arrivals</Link>
-          <Link to="/" className="hover:text-daraz-orange">Vouchers</Link>
+          <Link to="/?category=Organic Tea" className="hover:text-daraz-orange">Organic Tea</Link>
+          <Link to="/?category=Electronic Devices" className="hover:text-daraz-orange">Electronics</Link>
+          <Link to="/?category=Home & Lifestyle" className="hover:text-daraz-orange">Home & Lifestyle</Link>
+          <Link to="/vouchers" className="text-daraz-orange hover:opacity-80 flex items-center gap-1 font-black">
+            💎 Gems & Vouchers
+          </Link>
         </div>
       </div>
 
@@ -163,9 +166,9 @@ export default function Navbar({ cartCount }: { cartCount: number }) {
               Admin Console <Landmark size={24} />
             </Link>
           )}
-          <Link to="/?category=Handicrafts" className="text-lg font-bold uppercase border-b border-neutral-50 pb-4">Handicrafts</Link>
-          <Link to="/?category=Tea" className="text-lg font-bold uppercase border-b border-neutral-50 pb-4">Flash Sale</Link>
-          <Link to="/?category=Electronics" className="text-lg font-bold uppercase border-b border-neutral-50 pb-4">New Arrivals</Link>
+          <Link to="/?category=Handicrafts" className="text-lg font-bold uppercase border-b border-neutral-50 pb-4" onClick={() => setIsMenuOpen(false)}>Handicrafts</Link>
+          <Link to="/?category=Organic Tea" className="text-lg font-bold uppercase border-b border-neutral-50 pb-4" onClick={() => setIsMenuOpen(false)}>Organic Tea</Link>
+          <Link to="/?category=Electronic Devices" className="text-lg font-bold uppercase border-b border-neutral-50 pb-4" onClick={() => setIsMenuOpen(false)}>Electronics</Link>
         </div>
       )}
     </header>

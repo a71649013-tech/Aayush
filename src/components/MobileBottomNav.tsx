@@ -22,6 +22,11 @@ export default function MobileBottomNav({ cartCount }: { cartCount: number }) {
         <List size={22} className={isActive('/categories') ? 'text-daraz-orange' : ''} />
         <span className="text-[10px] font-bold uppercase tracking-tighter">Categories</span>
       </Link>
+
+      <Link to="/vouchers" className={`flex flex-col items-center gap-1 ${isActive('/vouchers') ? 'text-daraz-orange' : 'text-neutral-500'}`}>
+        <Gift size={22} className={isActive('/vouchers') ? 'fill-daraz-orange' : ''} />
+        <span className="text-[10px] font-bold uppercase tracking-tighter">Gems</span>
+      </Link>
       
       <Link to="/cart" className={`flex flex-col items-center gap-1 relative ${isActive('/cart') ? 'text-daraz-orange' : 'text-neutral-500'}`}>
         <ShoppingCart size={22} className={isActive('/cart') ? 'fill-daraz-orange' : ''} />

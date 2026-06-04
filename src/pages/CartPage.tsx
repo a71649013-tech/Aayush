@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Trash2, Plus, Minus, ArrowRight, ShoppingBag, CreditCard, Truck, ShoppingCart, MapPin, CheckCircle2 } from 'lucide-react';
-import { CartItem } from '../types';
+import { Trash2, Plus, Minus, ArrowRight, ShoppingBag, CreditCard, Truck, ShoppingCart, MapPin, CheckCircle2, Ticket } from 'lucide-react';
+import { CartItem, UserVoucher } from '../types';
 import { formatCurrency, cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { useFirebase } from '../context/FirebaseContext';
 import { orderService } from '../services/orderService';
 import { EsewaPayment } from '../components/EsewaPayment';
+import { gemService } from '../services/gemService';
 
 import { NEPAL_CITIES } from '../constants';
 
@@ -29,11 +30,85 @@ export default function CartPage({ cart, onRemove, onUpdateQuantity }: {
     details: ''
   });
 
+  // Voucher states
+  const [appliedVoucher, setAppliedVoucher] = useState<UserVoucher | null>(null);
+  const [voucherCodeInput, setVoucherCodeInput] = useState('');
+  const [voucherError, setVoucherError] = useState<string | null>(null);
+  const [voucherSuccessMsg, setVoucherSuccessMsg] = useState<string | null>(null);
+
   const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const shipping = subtotal > 15000 ? 0 : 150;
-  const total = subtotal + shipping;
+  const baseShipping = subtotal > 15000 ? 0 : 150;
+
+  // Determine dynamic discount totals
+  let discountAmount = 0;
+  let finalShipping = baseShipping;
+
+  if (appliedVoucher) {
+    if (appliedVoucher.type === 'amount') {
+      discountAmount = Math.min(subtotal, appliedVoucher.discount);
+    } else if (appliedVoucher.type === 'percentage') {
+      discountAmount = Math.round(subtotal * (appliedVoucher.discount / 100));
+    } else if (appliedVoucher.type === 'shipping') {
+      discountAmount = baseShipping;
+      finalShipping = 0;
+    }
+  }
+
+  const total = Math.max(0, subtotal + finalShipping - discountAmount);
 
   const isAddressValid = address.fullName && address.phone && address.area && address.details;
+
+  const getMyVouchers = (): UserVoucher[] => {
+    if (user?.id && user.id !== 'pin-admin') {
+      return user.vouchers || [];
+    }
+    return gemService.getGuestState().vouchers || [];
+  };
+
+  const unusedVouchers = getMyVouchers().filter(v => !v.isUsed);
+
+  const handleApplyVoucher = (v: UserVoucher) => {
+    setVoucherError(null);
+    setVoucherSuccessMsg(null);
+    
+    if (v.isUsed) {
+      setVoucherError('This voucher has already been redeemed.');
+      return;
+    }
+    if (subtotal < v.minSpent) {
+      setVoucherError(`Minimum Purchase of ${formatCurrency(v.minSpent)} required to use this voucher.`);
+      return;
+    }
+    if (v.category) {
+      const hasCat = cart.some(item => item.category === v.category);
+      if (!hasCat) {
+        setVoucherError(`This voucher on category "${v.category}" requires at least one matching item in your bag.`);
+        return;
+      }
+    }
+
+    setAppliedVoucher(v);
+    setVoucherSuccessMsg(`Voucher "${v.code}" applied successfully!`);
+  };
+
+  const handleApplyCodeManual = () => {
+    setVoucherError(null);
+    setVoucherSuccessMsg(null);
+    
+    const code = voucherCodeInput.trim().toUpperCase();
+    if (!code) {
+      setVoucherError('Please specify a voucher code.');
+      return;
+    }
+    
+    const found = getMyVouchers().find(v => v.code.toUpperCase() === code);
+    if (!found) {
+      setVoucherError('Voucher code not found in your portfolio.');
+      return;
+    }
+
+    handleApplyVoucher(found);
+  };
 
   const handleCheckout = async () => {
     if (!isAddressValid) return;
@@ -49,6 +124,7 @@ export default function CartPage({ cart, onRemove, onUpdateQuantity }: {
     // Simulate payment processing
     setTimeout(async () => {
       try {
+        // Build order with voucher deduction
         await orderService.createOrder({
           customerId: user?.id || 'guest',
           customerName: address.fullName,
@@ -59,6 +135,11 @@ export default function CartPage({ cart, onRemove, onUpdateQuantity }: {
           address
         });
         
+        // Consume applied voucher from user portfolio
+        if (appliedVoucher) {
+          await gemService.useVoucherOffline(appliedVoucher.code, user?.id);
+        }
+
         setIsProcessing(false);
         setIsCheckingOut(true);
       } catch (err) {
@@ -238,6 +319,109 @@ export default function CartPage({ cart, onRemove, onUpdateQuantity }: {
               </div>
             </div>
 
+            {/* Vouchers and Promos Segment */}
+            <div className="mb-8 border-b border-neutral-100 pb-8">
+              <h2 className="text-xs font-black tracking-widest text-neutral-400 mb-6 uppercase flex items-center gap-2 italic">
+                <Ticket size={14} className="text-daraz-orange" /> Vouchers & Promos
+              </h2>
+
+              <div className="flex gap-2 mb-4">
+                <input 
+                  type="text" 
+                  placeholder="PROMO CODE (e.g. GEM50)" 
+                  className="flex-1 text-xs p-3 bg-neutral-50 border border-neutral-200 outline-none focus:border-daraz-orange rounded-sm font-bold uppercase tracking-wider"
+                  value={voucherCodeInput}
+                  onChange={e => setVoucherCodeInput(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={handleApplyCodeManual}
+                  className="bg-neutral-900 text-white text-xs font-black uppercase px-6 rounded-sm hover:opacity-90 active:scale-95 transition-all"
+                >
+                  Apply
+                </button>
+              </div>
+
+              {voucherError && (
+                <p className="text-[10px] text-red-500 font-extrabold uppercase tracking-wider mb-4">
+                  ⚠️ {voucherError}
+                </p>
+              )}
+
+              {voucherSuccessMsg && (
+                <p className="text-[10px] text-green-600 font-extrabold uppercase tracking-wider mb-4">
+                  ✓ {voucherSuccessMsg}
+                </p>
+              )}
+
+              {unusedVouchers.length > 0 ? (
+                <div className="space-y-2 mt-4">
+                  <p className="text-[9px] text-neutral-400 font-black uppercase tracking-widest mb-1">
+                    Redeemed Vouchers (Click to apply):
+                  </p>
+                  <div className="max-h-36 overflow-y-auto space-y-2 pr-1 scrollbar-thin">
+                    {unusedVouchers.map((v) => {
+                      const isSelected = appliedVoucher?.id === v.id;
+                      return (
+                        <button
+                          key={v.id}
+                          type="button"
+                          onClick={() => handleApplyVoucher(v)}
+                          className={cn(
+                            "w-full text-left p-3 rounded-sm border transition-all flex justify-between items-center bg-white",
+                            isSelected 
+                              ? "bg-daraz-orange/10 border-daraz-orange text-daraz-orange" 
+                              : "border-neutral-200 text-neutral-805 hover:border-daraz-orange/30"
+                          )}
+                        >
+                          <div>
+                            <span className="text-xs font-bold font-mono tracking-wider block">
+                              {v.code}
+                            </span>
+                            <span className="text-[9px] text-neutral-450 block font-semibold">
+                              {v.title} (Min spend: {formatCurrency(v.minSpent)})
+                            </span>
+                          </div>
+                          <span className="text-xs font-black uppercase italic shrink-0">
+                            {v.discount}{v.type === 'percentage' ? '%' : ' Rs'} OFF
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-neutral-50 p-4 rounded-sm border border-neutral-100 text-center">
+                  <p className="text-[9px] text-neutral-400 font-black uppercase tracking-wider leading-relaxed">
+                    No active vouchers. Visit the <Link to="/vouchers" className="text-daraz-orange font-black underline decoration-2 decoration-daraz-orange/40">Gems Hub</Link> to secure some!
+                  </p>
+                </div>
+              )}
+
+              {appliedVoucher && (
+                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-sm flex justify-between items-center">
+                  <div>
+                    <span className="text-[9px] text-green-600 font-black uppercase tracking-widest block">
+                      Applied Discount
+                    </span>
+                    <span className="text-[11px] font-black uppercase tracking-tight text-neutral-800">
+                      {appliedVoucher.title}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAppliedVoucher(null);
+                      setVoucherSuccessMsg(null);
+                    }}
+                    className="text-[10px] font-black uppercase text-red-500 hover:underline"
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
+            </div>
+
             <h2 className="text-2xl font-black tracking-tighter mb-8 uppercase italic underline decoration-daraz-orange decoration-4 underline-offset-8">Order Summary</h2>
             
             <div className="mb-8 space-y-4">
@@ -281,9 +465,17 @@ export default function CartPage({ cart, onRemove, onUpdateQuantity }: {
                 <span className="uppercase tracking-widest text-[10px]">Subtotal</span>
                 <span className="text-neutral-800 tracking-tighter text-lg">{formatCurrency(subtotal)}</span>
               </div>
+
+              {discountAmount > 0 && (
+                <div className="flex justify-between text-green-600 font-extrabold bg-green-50/50 p-2 rounded-sm border border-green-100">
+                  <span className="uppercase tracking-widest text-[10px]">Voucher Discount</span>
+                  <span className="tracking-tighter text-lg">-{formatCurrency(discountAmount)}</span>
+                </div>
+              )}
+
               <div className="flex justify-between text-neutral-400 font-medium">
                 <span className="uppercase tracking-widest text-[10px]">Shipping</span>
-                <span className="text-neutral-800 tracking-tighter text-lg">{shipping === 0 ? "FREE" : formatCurrency(shipping)}</span>
+                <span className="text-neutral-800 tracking-tighter text-lg">{finalShipping === 0 ? "FREE" : formatCurrency(finalShipping)}</span>
               </div>
               <div className="h-px bg-neutral-100 my-6"></div>
               <div className="flex justify-between items-baseline">
@@ -333,6 +525,11 @@ export default function CartPage({ cart, onRemove, onUpdateQuantity }: {
                   method: 'ESEWA',
                   address
                 });
+
+                if (appliedVoucher) {
+                  await gemService.useVoucherOffline(appliedVoucher.code, user?.id);
+                }
+
                 setIsProcessing(false);
                 setIsCheckingOut(true);
               } catch (err) {

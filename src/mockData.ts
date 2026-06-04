@@ -9,7 +9,7 @@ const RAW_PRODUCTS = [
     description: "Premium power strip model PL2023M-3M equipped with 3 universal outlets, convenient safety shutters to protect children from accidents, and an elegant red neon main switch. Completed with a durable 3-meter cord and 100% pure copper internals.",
     price: 1270.00,
     category: "Electronic Devices",
-    image: "https://images.unsplash.com/photo-1563770660941-20978e870e26?auto=format&fit=crop&q=80&w=800",
+    image: "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&q=80&w=800",
     rating: 4.7,
     numReviews: 53,
     stock: 30
@@ -277,7 +277,7 @@ const RAW_PRODUCTS = [
     description: "Model 52.25257 deluxe transparent JO TRACE hooks with floral gold-toned plates. Extremely strong adhesive backing provides hassle-free toolless wall installation that supports a maximum load capacity of 1.5kg. Fully waterproof and rustproof.",
     price: 125.00,
     category: "Home & Lifestyle",
-    image: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&q=80&w=800",
+    image: "https://images.unsplash.com/photo-1591154669695-5f2a8d20c089?auto=format&fit=crop&q=80&w=800",
     rating: 4.8,
     numReviews: 35,
     stock: 80
@@ -288,7 +288,7 @@ const RAW_PRODUCTS = [
     description: "Rustproof stainless steel adhesive hooks showing intricate heart-shaped and wildflower laser-cut backplates. Backed with authentic industrial self-adhesive sheet that grips firmly onto ceramic tiles, concrete, or dryboards with up to 1.5kg load capacity.",
     price: 120.00,
     category: "Home & Lifestyle",
-    image: "https://images.unsplash.com/photo-1591154669695-5f2a8d20c089?auto=format&fit=crop&q=80&w=800",
+    image: "https://images.unsplash.com/photo-1610701596007-11502861dcfa?auto=format&fit=crop&q=80&w=800",
     rating: 4.4,
     numReviews: 9,
     stock: 95
@@ -343,7 +343,7 @@ const RAW_PRODUCTS = [
     description: "Extremely plush bathroom mat lined with quick-dry high pile microfiber shag. Incorporates an absolute heavy-duty anti-slide TP latex backing layer to prevent slipping on wet marble tiles.",
     price: 450.00,
     category: "Home & Lifestyle",
-    image: "https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&q=80&w=800",
+    image: "https://images.unsplash.com/photo-1600121848594-d8644e57abab?auto=format&fit=crop&q=80&w=800",
     rating: 4.7,
     numReviews: 50,
     stock: 130
@@ -365,7 +365,7 @@ const RAW_PRODUCTS = [
     description: "Aromatherapy dynamic humidifier containing 2.5L clean tank capacity. Delivers fully adjustable misting speed, automatic low-water level safety shutdown sensor, and beautiful warm LED ambient night lighting.",
     price: 2200.00,
     category: "Home & Lifestyle",
-    image: "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&q=80&w=800",
+    image: "https://images.unsplash.com/photo-1602928321679-560bb453f190?auto=format&fit=crop&q=80&w=800",
     rating: 4.8,
     numReviews: 29,
     stock: 17
@@ -477,7 +477,7 @@ const RAW_PRODUCTS = [
     description: "Authentic heavily fermented leafy mustard and radish greens harvested in solar-dry environments. Delivers ultimate tangy ethnic spice base for winter soups and side salads.",
     price: 180.00,
     category: "Groceries",
-    image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800",
+    image: "https://images.unsplash.com/photo-1596797038530-2c107229654b?auto=format&fit=crop&q=80&w=800",
     rating: 4.9,
     numReviews: 104,
     stock: 65
@@ -813,7 +813,7 @@ const RAW_PRODUCTS = [
     description: "Ultra heavy-duty tube steel framing coupled with robust 600D Oxford cloth sitting sheet, designed to sustain maximum load up to 110kg and fold up instantly inside travel carrier bag.",
     price: 1350.00,
     category: "Sports & Outdoor",
-    image: "https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&q=80&w=800",
+    image: "https://images.unsplash.com/photo-1617135813745-f09b2e2b8344?auto=format&fit=crop&q=80&w=800",
     rating: 4.7,
     numReviews: 19,
     stock: 45
@@ -1026,7 +1026,7 @@ const RAW_PRODUCTS = [
     description: "Artisanal set of 4 clay terracotta tealight containers featuring intricate floral cutouts, projecting relaxing starry lighting silhouettes on bedroom walls.",
     price: 320.00,
     category: "Art & Decor",
-    image: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=800",
+    image: "https://images.unsplash.com/photo-1606744824163-985d376605aa?auto=format&fit=crop&q=80&w=800",
     rating: 4.7,
     numReviews: 14,
     stock: 60
@@ -1103,7 +1103,7 @@ const RAW_PRODUCTS = [
     description: "Unique avant-garde abstract human face clay planter vase. Modern home design centerpiece perfect for displaying raw dried pampas grass decorations.",
     price: 1100.00,
     category: "Art & Decor",
-    image: "https://images.unsplash.com/photo-1578500494198-246f612d3b3d?auto=format&fit=crop&q=80&w=800",
+    image: "https://images.unsplash.com/photo-1581781894097-4cb347ec4c6d?auto=format&fit=crop&q=80&w=800",
     rating: 4.8,
     numReviews: 14,
     stock: 15
@@ -1116,7 +1116,7 @@ const RAW_PRODUCTS = [
     description: "Robust metal-frame training tricycle (item 357.3111) in gorgeous modern beige tones with orange-red fenders and a winking winky-face emoji basket. Fitted with comfortable seat rest, non-slip textured handles, and solid quiet rubber tires for indoor or garden play.",
     price: 3890.00,
     category: "Gift Sets",
-    image: "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?auto=format&fit=crop&q=80&w=800",
+    image: "https://images.unsplash.com/photo-1531983412531-1f49a365f69a?auto=format&fit=crop&q=80&w=800",
     rating: 4.9,
     numReviews: 41,
     stock: 8
@@ -1226,7 +1226,7 @@ const RAW_PRODUCTS = [
     description: "Cute pocket music box intricately laser cut from birch plywood. Cranks out standard musical notations of classical legends upon side handle rotation.",
     price: 650.00,
     category: "Gift Sets",
-    image: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&q=80&w=800",
+    image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=800",
     rating: 4.8,
     numReviews: 53,
     stock: 85

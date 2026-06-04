@@ -3,12 +3,28 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+export interface UserVoucher {
+  id: string;
+  code: string;
+  title: string;
+  discount: number;
+  type: 'amount' | 'percentage' | 'shipping';
+  minSpent: number;
+  category?: string;
+  isUsed: boolean;
+  expiryDate: string;
+}
+
 export interface User {
   id: string;
   name: string;
   email: string;
   role: 'user' | 'admin' | 'merchant';
   isMerchant?: boolean;
+  gems?: number;
+  lastClaimed?: string;
+  streak?: number;
+  vouchers?: UserVoucher[];
 }
 
 export interface Review {

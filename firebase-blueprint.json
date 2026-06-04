@@ -53,7 +53,11 @@
       "properties": {
         "name": { "type": "string" },
         "email": { "type": "string" },
-        "role": { "type": "string", "enum": ["user", "admin"] }
+        "role": { "type": "string", "enum": ["user", "admin", "merchant"] },
+        "gems": { "type": "number" },
+        "lastClaimed": { "type": "string" },
+        "streak": { "type": "number" },
+        "vouchers": { "type": "array" }
       },
       "required": ["name", "email", "role"]
     }

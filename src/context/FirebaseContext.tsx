@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { User } from '../types';
 
@@ -53,41 +53,71 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+    let unsubUserDoc: (() => void) | null = null;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, async (fbUser) => {
       try {
         setConnectionError(false);
+        
+        // Clean up previous user snapshot listener if any
+        if (unsubUserDoc) {
+          unsubUserDoc();
+          unsubUserDoc = null;
+        }
+
         if (localStorage.getItem('admin_pin_authenticated') === 'true') {
           return;
         }
+
         if (fbUser) {
           const userDocRef = doc(db, 'users', fbUser.uid);
-          const userDoc = await getDoc(userDocRef);
           
-          const isAdminEmail = fbUser.email === 'a71649013@gmail.com' || fbUser.email === 'rudhrasha44@gmail.com';
-          
-          if (userDoc.exists()) {
-            const userData = userDoc.data() as User;
-            // Upgrade to admin if email matches but role is not admin
-            if (isAdminEmail && userData.role !== 'admin') {
-              const updatedUser = { ...userData, role: 'admin' as const };
-              await setDoc(userDocRef, updatedUser);
-              setUser(updatedUser);
-            } else {
-              setUser(userData);
+          unsubUserDoc = onSnapshot(userDocRef, async (userDoc) => {
+            try {
+              if (userDoc.exists()) {
+                const userData = userDoc.data() as User;
+                const isAdminEmail = fbUser.email === 'a71649013@gmail.com' || fbUser.email === 'rudhrasha44@gmail.com';
+                
+                if (isAdminEmail && userData.role !== 'admin') {
+                  const updatedUser = { ...userData, role: 'admin' as const };
+                  await setDoc(userDocRef, updatedUser);
+                  setUser(updatedUser);
+                } else {
+                  setUser({
+                    gems: 0,
+                    streak: 0,
+                    lastClaimed: '',
+                    vouchers: [],
+                    ...userData,
+                    id: fbUser.uid
+                  });
+                }
+              } else {
+                const isAdminEmail = fbUser.email === 'a71649013@gmail.com' || fbUser.email === 'rudhrasha44@gmail.com';
+                const newUser: User = {
+                  id: fbUser.uid,
+                  name: fbUser.displayName || 'User',
+                  email: fbUser.email || '',
+                  role: isAdminEmail ? 'admin' : 'user',
+                  gems: 0,
+                  streak: 0,
+                  lastClaimed: '',
+                  vouchers: []
+                };
+                await setDoc(userDocRef, newUser);
+                setUser(newUser);
+              }
+            } catch (snapErr) {
+              console.error("User doc snapshot processing error:", snapErr);
             }
-          } else {
-            // Bootstrap admin for the specific user email if needed
-            const newUser: User = {
-              id: fbUser.uid,
-              name: fbUser.displayName || 'User',
-              email: fbUser.email || '',
-              role: isAdminEmail ? 'admin' : 'user'
-            };
-            await setDoc(userDocRef, newUser);
-            setUser(newUser);
-          }
+            setLoading(false);
+          }, (err) => {
+            console.error("User doc snapshot error:", err);
+            setLoading(false);
+          });
         } else {
           setUser(null);
+          setLoading(false);
         }
       } catch (error) {
         console.error("Firebase Auth Error:", error);
@@ -95,12 +125,16 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           setConnectionError(true);
         }
         setUser(null);
-      } finally {
         setLoading(false);
       }
     });
 
-    return unsubscribe;
+    return () => {
+      unsubscribeAuth();
+      if (unsubUserDoc) {
+        unsubUserDoc();
+      }
+    };
   }, []);
 
   return (
