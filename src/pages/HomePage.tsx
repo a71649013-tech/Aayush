@@ -101,28 +101,6 @@ export default function HomePage({ products }: { products: Product[] }) {
   return (
     <div className="bg-daraz-bg min-h-screen overflow-x-hidden">
       
-      {/* 1. TOP MOBILE APP INSTAL BANNER OVERLAY */}
-      <div className="bg-white border-b border-neutral-100 px-4 py-3 flex items-center justify-between shadow-sm hover:bg-neutral-50 transition-colors md:hidden">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#f85606] to-[#ff7a36] flex items-center justify-center text-white font-black text-2xl shadow-lg relative overflow-hidden">
-            <span className="relative z-10 italic">d</span>
-            <div className="absolute inset-0 bg-white/20 -rotate-45 translate-y-4"></div>
-          </div>
-          <div>
-            <h4 className="text-xs font-black text-neutral-800 tracking-tight">Daraz App</h4>
-            <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider">Save more on App</p>
-          </div>
-        </div>
-        <a 
-          href="https://daraz.com.np" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="bg-daraz-orange text-white text-[11px] font-black uppercase tracking-wider px-6 py-2 rounded-full shadow-md active:scale-95 transition-all text-center"
-        >
-          Open
-        </a>
-      </div>
-
       {/* Promo Bar */}
       <div className="bg-neutral-900 text-white py-1.5 overflow-hidden w-full relative border-b border-white/5">
         <div className="flex whitespace-nowrap animate-marquee">
