@@ -119,7 +119,7 @@ export default function Navbar({ cartCount }: { cartCount: number }) {
               </Link>
             )}
             
-            <Link to="/cart" className="relative group flex md:hidden lg:flex">
+            <Link to="/cart" className="relative group hidden md:flex">
               <ShoppingCart size={28} className="text-neutral-700 group-hover:text-daraz-orange transition-colors" />
               {cartCount > 0 && (
                 <span className="absolute -top-1 -right-2 bg-daraz-orange text-white text-[10px] font-bold h-5 w-5 flex items-center justify-center rounded-full border-2 border-white">
