@@ -117,7 +117,7 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div>
-            <h1 className="text-4xl font-black italic uppercase tracking-tighter text-blue-600">Merchant Center</h1>
+            <h1 className="text-4xl font-black italic uppercase tracking-tighter text-blue-600">Admin Console</h1>
             <p className="text-neutral-500 font-medium uppercase text-[10px] tracking-widest mt-1">Management Console / v2.4.0</p>
           </div>
           <div className="flex gap-4">

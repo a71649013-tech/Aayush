@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingCart, Search, User as UserIcon, Menu, X, Landmark, Globe, Smartphone, LogOut } from 'lucide-react';
+import { ShoppingCart, Search, User as UserIcon, Menu, X, Landmark, Globe, Smartphone, LogOut, ShieldAlert } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useFirebase } from '../context/FirebaseContext';
 import { logout } from '../lib/firebase';
@@ -49,10 +49,18 @@ export default function Navbar({ cartCount }: { cartCount: number }) {
                <Smartphone size={10} /> CS: +977 982-8105337
              </a>
              <span className="text-neutral-300">|</span>
-             {user && (user.role === 'admin' || user.role === 'merchant' || user.isMerchant) && (
+             {user && (user.role === 'merchant' || user.isMerchant) && (
                <>
                  <Link to="/merchant" className="text-daraz-orange font-bold hover:underline transition-colors flex items-center gap-1">
                    <Landmark size={10} /> Merchant Center
+                 </Link>
+                 <span className="text-neutral-300">|</span>
+               </>
+             )}
+             {user && user.role === 'admin' && (
+               <>
+                 <Link to="/admin" className="text-red-600 font-bold hover:underline transition-colors flex items-center gap-1">
+                   <ShieldAlert size={10} /> Admin Console
                  </Link>
                  <span className="text-neutral-300">|</span>
                </>
