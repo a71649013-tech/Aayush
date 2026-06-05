@@ -92,7 +92,7 @@ export default function Navbar({ cartCount }: { cartCount: number }) {
 
           <div className="flex items-center gap-2 md:gap-8 shrink-0">
             {user ? (
-              <Link to="/profile" className="flex items-center gap-2 group transition-all">
+              <Link to="/profile" className="hidden md:flex items-center gap-2 group transition-all">
                 <div className="w-10 h-10 bg-daraz-orange/10 rounded-full flex items-center justify-center text-daraz-orange group-hover:bg-daraz-orange group-hover:text-white transition-all">
                   <UserIcon size={20} />
                 </div>
@@ -102,7 +102,7 @@ export default function Navbar({ cartCount }: { cartCount: number }) {
                 </div>
               </Link>
             ) : (
-              <Link to="/login" className="flex items-center gap-2 hover:text-daraz-orange transition-colors group">
+              <Link to="/login" className="hidden md:flex items-center gap-2 hover:text-daraz-orange transition-colors group">
                 <UserIcon size={24} className="text-neutral-700 group-hover:text-daraz-orange" />
                 <div className="hidden lg:block text-left">
                   <p className="text-[10px] text-neutral-500 font-bold uppercase leading-none">Hello, Sign in</p>
