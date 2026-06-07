@@ -96,8 +96,20 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
 
   const handleQuickSeed = async () => {
     if (window.confirm('This will add all demo products to your database. Continue?')) {
-      await productService.seedIfEmpty();
-      alert('Demo products added! Please refresh if they don\'t appear immediately.');
+      await productService.seedIfEmpty(true);
+      alert('Demo products seeded successfully!');
+    }
+  };
+
+  const handleDeleteAllProducts = async () => {
+    if (window.confirm('WARNING: Are you absolutely sure you want to delete ALL products from Nepali Mart? This action is irreversible.')) {
+      try {
+        await productService.deleteAllProducts();
+        alert('All products successfully deleted from the database!');
+      } catch (err) {
+        console.error("Error deleting products:", err);
+        alert('Failed to delete all products. Please check console.');
+      }
     }
   };
 
@@ -121,6 +133,13 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
             <p className="text-neutral-500 font-medium uppercase text-[10px] tracking-widest mt-1">Management Console / v2.4.0</p>
           </div>
           <div className="flex gap-4">
+            <button 
+              onClick={handleDeleteAllProducts}
+              className="px-6 py-3 border-2 border-red-200 bg-red-50 text-red-600 text-[10px] font-bold uppercase tracking-widest hover:bg-red-100 flex items-center gap-2 group transition-all rounded-sm shadow-sm"
+              title="Delete all products from the database"
+            >
+              <Trash2 size={14} className="text-red-500 group-hover:scale-110 transition-transform" /> Delete All Products
+            </button>
             <button 
               onClick={handleQuickSeed}
               className="px-6 py-3 border border-neutral-200 bg-white text-neutral-400 text-[10px] font-bold uppercase tracking-widest hover:bg-neutral-50 flex items-center gap-2 group transition-all rounded-sm shadow-sm"

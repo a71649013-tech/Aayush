@@ -19,16 +19,15 @@ import { MOCK_PRODUCTS } from '../mockData';
 const COLLECTION_NAME = 'products';
 
 export const productService = {
-  // Seed products and clear outdated demo versions
-  async seedIfEmpty() {
+  // Only seeds on manual admin initiation
+  async seedIfEmpty(forceDemo = false) {
     try {
       const querySnapshot = await getDocs(collection(db, COLLECTION_NAME));
       const hasBrandNewProducts = querySnapshot.docs.some(doc => doc.id === 'daraz-sport-7' && (doc.data() as any).image?.includes('photo-1617135813745'));
       
-      if (querySnapshot.empty || !hasBrandNewProducts) {
-        console.log('Clearing old mock entries and seeding updated clean background products...');
+      if (forceDemo || querySnapshot.empty || !hasBrandNewProducts) {
+        console.log('Clearing old entries and seeding clean demo products...');
         for (const docSnap of querySnapshot.docs) {
-          // Clean up old demo products to avoid collision or noise
           await deleteDoc(doc(db, COLLECTION_NAME, docSnap.id));
         }
         
@@ -42,9 +41,20 @@ export const productService = {
         console.log(`Firestore Database successfully seeded with ${MOCK_PRODUCTS.length} products!`);
       }
     } catch (error) {
-      // If we can't read or write due to permissions during seeding, we ignore it 
-      // as it's likely a non-admin user visiting a fresh DB.
       console.log('Seeding skipped or not permitted:', error);
+    }
+  },
+
+  // Clears all products from the database
+  async deleteAllProducts() {
+    try {
+      const querySnapshot = await getDocs(collection(db, COLLECTION_NAME));
+      for (const docSnap of querySnapshot.docs) {
+        await deleteDoc(doc(db, COLLECTION_NAME, docSnap.id));
+      }
+      console.log('All products successfully deleted from Firestore!');
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, COLLECTION_NAME);
     }
   },
 
@@ -56,21 +66,13 @@ export const productService = {
         ...doc.data()
       })) as Product[];
       
-      // Merge dbProducts with MOCK_PRODUCTS, prioritizing DB versions
-      const mergedProducts = [...dbProducts];
-      for (const p of MOCK_PRODUCTS) {
-        if (!mergedProducts.some(dp => dp.id === p.id)) {
-          mergedProducts.push(p);
-        }
-      }
+      // Sort database products list alphabetically by name
+      dbProducts.sort((a, b) => a.name.localeCompare(b.name));
       
-      // Sort the merged products list alphabetically by name
-      mergedProducts.sort((a, b) => a.name.localeCompare(b.name));
-      
-      callback(mergedProducts);
+      callback(dbProducts);
     }, (error) => {
-      console.warn('Firestore subscription failed, falling back to local MOCK_PRODUCTS:', error);
-      callback(MOCK_PRODUCTS);
+      console.warn('Firestore subscription failed:', error);
+      callback([]);
     });
   },
 
@@ -110,9 +112,8 @@ export const productService = {
       
       callback(products);
     }, (error) => {
-      console.warn('Seller products subscription failed, pulling from memory fallback if empty:', error);
-      const fallbacks = MOCK_PRODUCTS.filter(p => p.sellerId === sellerId);
-      callback(fallbacks);
+      console.warn('Seller products subscription failed:', error);
+      callback([]);
     });
   },
 

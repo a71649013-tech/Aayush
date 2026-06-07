@@ -38,17 +38,6 @@ export default function App() {
     // Initialize Unity Ads
     initUnityAds();
 
-    // Check connection and seed
-    const checkConnection = async () => {
-      try {
-        await productService.seedIfEmpty();
-      } catch (err) {
-        console.error("Connectivity issue detected on startup:", err);
-      }
-    };
-    
-    checkConnection();
-
     // Subscribe
     const unsubscribe = productService.subscribeToProducts((fetched) => {
       setProducts(fetched);

@@ -12,7 +12,11 @@ import {
   AlertCircle,
   ChevronRight,
   LayoutGrid,
-  Truck
+  Truck,
+  Upload,
+  Trash2,
+  Camera,
+  Globe
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useFirebase } from '../context/FirebaseContext';
@@ -24,6 +28,49 @@ import { CATEGORIES } from '../constants';
 import { isUnityAdsLoaded } from '../services/unityAdsService';
 import { ProductImage } from '../components/ProductImage';
 
+const compressImage = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 600;
+        const MAX_HEIGHT = 600;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(event.target?.result as string);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        resolve(dataUrl);
+      };
+      img.onerror = (err) => reject(err);
+    };
+    reader.onerror = (err) => reject(err);
+  });
+};
+
 export default function MerchantPage() {
   const { user } = useFirebase();
   const navigate = useNavigate();
@@ -33,6 +80,10 @@ export default function MerchantPage() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  const [isDragActive, setIsDragActive] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [useUrlMode, setUseUrlMode] = useState(false);
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -41,6 +92,40 @@ export default function MerchantPage() {
     image: '',
     stock: '10'
   });
+
+  const handleFileChange = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      setImageError('Please select a valid image file (PNG, JPG, JPEG)');
+      return;
+    }
+    try {
+      setImageError(null);
+      const base64Data = await compressImage(file);
+      setFormData(prev => ({ ...prev, image: base64Data }));
+    } catch (err) {
+      console.error("Error processing image:", err);
+      setImageError('Failed to process image. Please try again.');
+    }
+  };
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setIsDragActive(true);
+    } else if (e.type === "dragleave") {
+      setIsDragActive(false);
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      await handleFileChange(e.dataTransfer.files[0]);
+    }
+  };
 
   useEffect(() => {
     if (!user) {
@@ -403,18 +488,101 @@ export default function MerchantPage() {
                           </div>
 
                           <div className="space-y-4">
-                            <div className="space-y-1.5">
-                              <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500">Image URL</label>
-                              <div className="relative">
-                                <input 
-                                  type="text" 
-                                  placeholder="https://..."
-                                  className="w-full bg-neutral-50 border border-neutral-200 px-4 py-3 rounded-sm text-sm font-medium outline-none focus:border-daraz-orange pl-10"
-                                  value={formData.image}
-                                  onChange={(e) => setFormData({...formData, image: e.target.value})}
-                                />
-                                <ImageIcon size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500">
+                                  {useUrlMode ? 'Product Image URL' : 'Product Photo'}
+                                </label>
+                                <button
+                                  type="button"
+                                  onClick={() => setUseUrlMode(!useUrlMode)}
+                                  className="text-[9px] font-black uppercase tracking-wider text-daraz-orange hover:underline focus:outline-none flex items-center gap-1"
+                                >
+                                  {useUrlMode ? <Camera size={10} /> : <Globe size={11} />}
+                                  {useUrlMode ? 'Upload Photo instead' : 'Use Image URL instead'}
+                                </button>
                               </div>
+
+                              {useUrlMode ? (
+                                <div className="relative">
+                                  <input 
+                                    type="text" 
+                                    placeholder="https://images.unsplash.com/..."
+                                    className="w-full bg-neutral-50 border border-neutral-200 px-4 py-3 rounded-sm text-sm font-medium outline-none focus:border-daraz-orange pl-10"
+                                    value={formData.image}
+                                    onChange={(e) => {
+                                      setFormData({...formData, image: e.target.value});
+                                      setImageError(null);
+                                    }}
+                                  />
+                                  <ImageIcon size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+                                </div>
+                              ) : (
+                                <div className="space-y-2">
+                                  {formData.image ? (
+                                    <div className="relative rounded-sm overflow-hidden border border-neutral-200 aspect-video bg-neutral-100 flex items-center justify-center group">
+                                      <img 
+                                        src={formData.image} 
+                                        alt="Product Preview" 
+                                        className="max-h-full max-w-full object-contain"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => setFormData({...formData, image: ''})}
+                                        className="absolute top-2 right-2 bg-neutral-900/80 text-white rounded-full p-2 hover:bg-red-600 transition-colors shadow-lg"
+                                        title="Remove photo"
+                                      >
+                                        <Trash2 size={14} />
+                                      </button>
+                                      <div className="absolute inset-x-0 bottom-0 bg-black/60 py-2 text-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-white">Photo Selected Successfully</p>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <label
+                                      onDragEnter={handleDrag}
+                                      onDragOver={handleDrag}
+                                      onDragLeave={handleDrag}
+                                      onDrop={handleDrop}
+                                      className={`border-2 border-dashed rounded-sm p-6 flex flex-col items-center justify-center cursor-pointer transition-all min-h-[160px] ${
+                                        isDragActive 
+                                          ? 'border-daraz-orange bg-orange-50/50' 
+                                          : 'border-neutral-200 bg-neutral-50 hover:bg-neutral-100/50 hover:border-neutral-300'
+                                      }`}
+                                    >
+                                      <input 
+                                        type="file" 
+                                        accept="image/*" 
+                                        className="hidden" 
+                                        onChange={(e) => {
+                                          if (e.target.files && e.target.files[0]) {
+                                            handleFileChange(e.target.files[0]);
+                                          }
+                                        }}
+                                      />
+                                      <div className="w-10 h-10 bg-neutral-100 text-neutral-500 rounded-full flex items-center justify-center mb-3">
+                                        <Camera size={20} />
+                                      </div>
+                                      <p className="text-[10px] font-black uppercase tracking-widest text-neutral-700 text-center">
+                                        Tap to Snap / Upload Photo
+                                      </p>
+                                      <p className="text-[8px] font-bold text-neutral-400 uppercase tracking-wider text-center mt-1">
+                                        Supports Camera photo or local files
+                                      </p>
+                                      <span className="mt-3 bg-white border border-neutral-200 hover:border-daraz-orange hover:text-daraz-orange px-4 py-2 rounded-sm text-[9px] font-black uppercase tracking-widest text-neutral-500 shadow-sm transition-all">
+                                        Choose File
+                                      </span>
+                                    </label>
+                                  )}
+
+                                  {imageError && (
+                                    <div className="flex items-center gap-1.5 text-red-500 text-[10px] font-bold uppercase tracking-wider mt-1">
+                                      <AlertCircle size={12} className="shrink-0" />
+                                      <span>{imageError}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             </div>
 
                             <div className="space-y-1.5">
