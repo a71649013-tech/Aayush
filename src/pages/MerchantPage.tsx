@@ -30,44 +30,53 @@ import { ProductImage } from '../components/ProductImage';
 
 const compressImage = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (event) => {
-      const img = new Image();
-      img.src = event.target?.result as string;
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 600;
-        const MAX_HEIGHT = 600;
-        let width = img.width;
-        let height = img.height;
+    const imageUrl = URL.createObjectURL(file);
+    const img = new Image();
+    img.src = imageUrl;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const MAX_WIDTH = 1024;
+      const MAX_HEIGHT = 1024;
+      let width = img.width;
+      let height = img.height;
 
-        if (width > height) {
-          if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width;
-            width = MAX_WIDTH;
-          }
-        } else {
-          if (height > MAX_HEIGHT) {
-            width *= MAX_HEIGHT / height;
-            height = MAX_HEIGHT;
-          }
+      if (width > height) {
+        if (width > MAX_WIDTH) {
+          height *= MAX_WIDTH / width;
+          width = MAX_WIDTH;
         }
+      } else {
+        if (height > MAX_HEIGHT) {
+          width *= MAX_HEIGHT / height;
+          height = MAX_HEIGHT;
+        }
+      }
 
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          resolve(event.target?.result as string);
-          return;
-        }
-        ctx.drawImage(img, 0, 0, width, height);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-        resolve(dataUrl);
-      };
-      img.onerror = (err) => reject(err);
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        // Fallback option
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (e) => resolve(e.target?.result as string);
+        reader.onerror = (err) => reject(err);
+        URL.revokeObjectURL(imageUrl);
+        return;
+      }
+      ctx.drawImage(img, 0, 0, width, height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+      URL.revokeObjectURL(imageUrl);
+      resolve(dataUrl);
     };
-    reader.onerror = (err) => reject(err);
+    img.onerror = (err) => {
+      URL.revokeObjectURL(imageUrl);
+      // Fallback
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (e) => resolve(e.target?.result as string);
+      reader.onerror = (e) => reject(e);
+    };
   });
 };
 
@@ -82,6 +91,7 @@ export default function MerchantPage() {
 
   const [isDragActive, setIsDragActive] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [compressing, setCompressing] = useState(false);
   const [useUrlMode, setUseUrlMode] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -94,17 +104,23 @@ export default function MerchantPage() {
   });
 
   const handleFileChange = async (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      setImageError('Please select a valid image file (PNG, JPG, JPEG)');
+    // Ensure accurate detection on all devices (some custom runtimes don't supply mime-types)
+    const isImageImageFile = file.type.startsWith('image/') || 
+                              /\.(jpg|jpeg|png|webp|heic|heif|gif)$/i.test(file.name);
+    if (!isImageImageFile) {
+      setImageError('Please select a valid photo file (PNG, JPG, JPEG, WEBP, HEIC)');
       return;
     }
     try {
       setImageError(null);
+      setCompressing(true);
       const base64Data = await compressImage(file);
       setFormData(prev => ({ ...prev, image: base64Data }));
     } catch (err) {
       console.error("Error processing image:", err);
-      setImageError('Failed to process image. Please try again.');
+      setImageError('Failed to process. Try a different photo or web camera snaps.');
+    } finally {
+      setCompressing(false);
     }
   };
 
@@ -519,7 +535,17 @@ export default function MerchantPage() {
                                 </div>
                               ) : (
                                 <div className="space-y-2">
-                                  {formData.image ? (
+                                  {compressing ? (
+                                    <div className="border-2 border-dashed border-neutral-200 bg-neutral-50 rounded-sm p-6 flex flex-col items-center justify-center min-h-[160px]">
+                                      <div className="w-8 h-8 border-2 border-daraz-orange border-t-transparent rounded-full animate-spin mb-3" />
+                                      <p className="text-[10px] font-black uppercase tracking-widest text-neutral-700 text-center animate-pulse">
+                                        Optimizing & Preparing Photo...
+                                      </p>
+                                      <p className="text-[8px] font-bold text-neutral-400 uppercase tracking-wider text-center mt-1">
+                                        Processing large high-res image for safe storage
+                                      </p>
+                                    </div>
+                                  ) : formData.image ? (
                                     <div className="relative rounded-sm overflow-hidden border border-neutral-200 aspect-video bg-neutral-100 flex items-center justify-center group">
                                       <img 
                                         src={formData.image} 
