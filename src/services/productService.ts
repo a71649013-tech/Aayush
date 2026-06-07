@@ -19,16 +19,17 @@ import { MOCK_PRODUCTS } from '../mockData';
 const COLLECTION_NAME = 'products';
 
 export const productService = {
-  // Only seeds on manual admin initiation
+  // Only seeds on manual admin initiation or when completely empty
   async seedIfEmpty(forceDemo = false) {
     try {
       const querySnapshot = await getDocs(collection(db, COLLECTION_NAME));
-      const hasBrandNewProducts = querySnapshot.docs.some(doc => doc.id === 'daraz-sport-7' && (doc.data() as any).image?.includes('photo-1617135813745'));
       
-      if (forceDemo || querySnapshot.empty || !hasBrandNewProducts) {
+      if (forceDemo || querySnapshot.empty) {
         console.log('Clearing old entries and seeding clean demo products...');
-        for (const docSnap of querySnapshot.docs) {
-          await deleteDoc(doc(db, COLLECTION_NAME, docSnap.id));
+        if (forceDemo && !querySnapshot.empty) {
+          for (const docSnap of querySnapshot.docs) {
+            await deleteDoc(doc(db, COLLECTION_NAME, docSnap.id));
+          }
         }
         
         for (const product of MOCK_PRODUCTS) {
@@ -68,6 +69,11 @@ export const productService = {
       
       // Sort database products list alphabetically by name
       dbProducts.sort((a, b) => a.name.localeCompare(b.name));
+      
+      if (snapshot.empty) {
+        // Auto-seed if the database is currently empty
+        productService.seedIfEmpty(false);
+      }
       
       callback(dbProducts);
     }, (error) => {

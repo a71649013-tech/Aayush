@@ -83,7 +83,7 @@ const RAW_PRODUCTS = [
     id: "mart-product-8",
     name: "Hanging Plastic Flower Pot Planter Set",
     description: "Weather-resistant scalloped edge plastic flower planter pot. Comes fully assembled with a high-durability white hanging triple chain hook. Designed of lightweight UV-stable resin for gorgeous outdoor balcony gardens.",
-    price: 250.00,
+    price: 123.00,
     category: "Home & Lifestyle",
     image: "https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&q=80&w=800",
     rating: 4.7,

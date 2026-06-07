@@ -64,9 +64,9 @@ service cloud.firestore {
     // Products
     match /products/{productId} {
       allow read: if true;
-      allow create: if isAdmin() && isValidProduct(incoming());
-      allow update: if isAdmin() && isValidProduct(incoming());
-      allow delete: if isAdmin();
+      allow create: if isSignedIn() && isValidProduct(incoming()) && (isAdmin() || incoming().sellerId == request.auth.uid);
+      allow update: if isSignedIn() && (isAdmin() || (existing().sellerId == request.auth.uid && isValidProduct(incoming())));
+      allow delete: if isAdmin() || (isSignedIn() && existing().sellerId == request.auth.uid);
 
       match /reviews/{reviewId} {
         allow read: if true;
