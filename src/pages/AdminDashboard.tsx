@@ -146,7 +146,12 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
-    onAddProduct(newProduct);
+    onAddProduct({
+      ...newProduct,
+      sellerId: user?.id || 'admin',
+      sellerName: user?.name || 'Administrator',
+      status: 'active'
+    });
     setShowAddModal(false);
     setNewProduct({
       name: '',

@@ -67,8 +67,13 @@ export const productService = {
         ...doc.data()
       })) as Product[];
       
-      // Sort database products list alphabetically by name
-      dbProducts.sort((a, b) => a.name.localeCompare(b.name));
+      // Sort database products list by createdAt descending (newest first) with alphabetical fallback
+      dbProducts.sort((a, b) => {
+        const timeA = (a as any).createdAt?.seconds || ((a as any).createdAt instanceof Date ? ((a as any).createdAt as Date).getTime() : 0);
+        const timeB = (b as any).createdAt?.seconds || ((b as any).createdAt instanceof Date ? ((b as any).createdAt as Date).getTime() : 0);
+        if (timeA !== timeB) return timeB - timeA;
+        return a.name.localeCompare(b.name);
+      });
       
       if (snapshot.empty) {
         // Auto-seed if the database is currently empty
