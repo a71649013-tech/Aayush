@@ -7,6 +7,60 @@ import { productService } from '../services/productService';
 import { useFirebase } from '../context/FirebaseContext';
 import { ProductImage } from '../components/ProductImage';
 
+const compressImage = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const imageUrl = URL.createObjectURL(file);
+    const img = new Image();
+    img.src = imageUrl;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      // Downscale to a maximum bounding box of 1024x1024 for safe Firestore storage limits (1MB maximum per document)
+      const MAX_WIDTH = 1024;
+      const MAX_HEIGHT = 1024;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > MAX_WIDTH) {
+          height *= MAX_WIDTH / width;
+          width = MAX_WIDTH;
+        }
+      } else {
+        if (height > MAX_HEIGHT) {
+          width *= MAX_HEIGHT / height;
+          height = MAX_HEIGHT;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        // Fallback option
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (e) => resolve(e.target?.result as string);
+        reader.onerror = (err) => reject(err);
+        URL.revokeObjectURL(imageUrl);
+        return;
+      }
+      ctx.drawImage(img, 0, 0, width, height);
+      // High details but compressed size
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+      URL.revokeObjectURL(imageUrl);
+      resolve(dataUrl);
+    };
+    img.onerror = (err) => {
+      URL.revokeObjectURL(imageUrl);
+      // Fallback
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (e) => resolve(e.target?.result as string);
+      reader.onerror = (e) => reject(e);
+    };
+  });
+};
+
 export default function AdminDashboard({ products, onAddProduct, onUpdateProduct, onDeleteProduct }: { 
   products: Product[], 
   onAddProduct: (p: any) => void,
@@ -18,6 +72,7 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [orders, setOrders] = useState<any[]>([]);
+  const [compressing, setCompressing] = useState(false);
   const [newProduct, setNewProduct] = useState({
     name: '',
     price: 0,
@@ -66,23 +121,28 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
     });
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 800000) {
-        alert('Image is too large. Please select an image under 800KB.');
+      const MAX_SIZE = 100 * 1024 * 1024; // 100MB
+      if (file.size > MAX_SIZE) {
+        alert('Photo exceeds the 100MB size limit. Please select a smaller photo file.');
         return;
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
+      try {
+        setCompressing(true);
+        const compressedBase64 = await compressImage(file);
         if (isEdit && editingProduct) {
-          setEditingProduct({ ...editingProduct, image: base64String });
+          setEditingProduct({ ...editingProduct, image: compressedBase64 });
         } else {
-          setNewProduct({ ...newProduct, image: base64String });
+          setNewProduct({ ...newProduct, image: compressedBase64 });
         }
-      };
-      reader.readAsDataURL(file);
+      } catch (err) {
+        console.error("Error compressing image:", err);
+        alert('Failed to process image. Try another photo file.');
+      } finally {
+        setCompressing(false);
+      }
     }
   };
 
@@ -362,7 +422,7 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
                   />
                 </div>
                 <div className="col-span-2 space-y-2">
-                  <label className="text-[10px] font-bold uppercase text-neutral-400">Product Image</label>
+                  <label className="text-[10px] font-bold uppercase text-neutral-400">Product Image (Supports up to 100MB)</label>
                   <div className="flex gap-4 items-start">
                     {editingProduct.image && (
                       <div className="relative w-24 h-24 shrink-0">
@@ -376,14 +436,22 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
                         </button>
                       </div>
                     )}
-                    <label className={cn(
-                      "flex-1 flex flex-col items-center justify-center border-2 border-dashed border-neutral-200 rounded-sm p-4 hover:border-blue-500 transition-colors cursor-pointer",
-                      !editingProduct.image ? "h-24" : "h-24"
-                    )}>
-                      <Upload size={20} className="text-neutral-400 mb-1" />
-                      <span className="text-[9px] font-black uppercase text-neutral-400 tracking-widest">Change Photo</span>
-                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, true)} />
-                    </label>
+                    {compressing ? (
+                      <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-daraz-orange rounded-sm p-4 h-24 bg-orange-50/20">
+                        <div className="w-5 h-5 border-2 border-daraz-orange border-t-transparent rounded-full animate-spin mb-1" />
+                        <span className="text-[8px] font-black uppercase text-daraz-orange tracking-widest animate-pulse">OPTIMIZING PHOTO...</span>
+                        <span className="text-[7px] text-neutral-400 font-bold uppercase tracking-wider">PREPARING ULTRA HIGH-RES FILE</span>
+                      </div>
+                    ) : (
+                      <label className={cn(
+                        "flex-1 flex flex-col items-center justify-center border-2 border-dashed border-neutral-200 rounded-sm p-4 hover:border-blue-500 transition-colors cursor-pointer",
+                        !editingProduct.image ? "h-24" : "h-24"
+                      )}>
+                        <Upload size={20} className="text-neutral-400 mb-1" />
+                        <span className="text-[9px] font-black uppercase text-neutral-400 tracking-widest">Change Photo</span>
+                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, true)} />
+                      </label>
+                    )}
                   </div>
                 </div>
               </div>
@@ -442,7 +510,7 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
                   />
                 </div>
                 <div className="col-span-2 space-y-2">
-                  <label className="text-[10px] font-bold uppercase text-neutral-400">Product Image</label>
+                  <label className="text-[10px] font-bold uppercase text-neutral-400">Product Image (Supports up to 100MB)</label>
                   <div className="flex gap-4 items-start">
                     {newProduct.image ? (
                       <div className="relative w-24 h-24 shrink-0">
@@ -456,14 +524,22 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
                         </button>
                       </div>
                     ) : null}
-                    <label className={cn(
-                      "flex-1 flex flex-col items-center justify-center border-2 border-dashed border-neutral-200 rounded-sm p-4 hover:border-daraz-orange transition-colors cursor-pointer",
-                      !newProduct.image ? "h-24" : "h-24"
-                    )}>
-                      <Upload size={20} className="text-neutral-400 mb-1" />
-                      <span className="text-[9px] font-black uppercase text-neutral-400 tracking-widest">{newProduct.image ? 'Change Photo' : 'Upload Product Photo'}</span>
-                      <input type="file" className="hidden" accept="image/*" required={!newProduct.image} onChange={(e) => handleImageUpload(e, false)} />
-                    </label>
+                    {compressing ? (
+                      <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-daraz-orange rounded-sm p-4 h-24 bg-orange-50/20">
+                        <div className="w-5 h-5 border-2 border-daraz-orange border-t-transparent rounded-full animate-spin mb-1" />
+                        <span className="text-[8px] font-black uppercase text-daraz-orange tracking-widest animate-pulse">OPTIMIZING PHOTO...</span>
+                        <span className="text-[7px] text-neutral-400 font-bold uppercase tracking-wider">PREPARING ULTRA HIGH-RES FILE</span>
+                      </div>
+                    ) : (
+                      <label className={cn(
+                        "flex-1 flex flex-col items-center justify-center border-2 border-dashed border-neutral-200 rounded-sm p-4 hover:border-daraz-orange transition-colors cursor-pointer",
+                        !newProduct.image ? "h-24" : "h-24"
+                      )}>
+                        <Upload size={20} className="text-neutral-400 mb-1" />
+                        <span className="text-[9px] font-black uppercase text-neutral-400 tracking-widest">{newProduct.image ? 'Change Photo' : 'Upload Product Photo'}</span>
+                        <input type="file" className="hidden" accept="image/*" required={!newProduct.image} onChange={(e) => handleImageUpload(e, false)} />
+                      </label>
+                    )}
                   </div>
                 </div>
               </div>

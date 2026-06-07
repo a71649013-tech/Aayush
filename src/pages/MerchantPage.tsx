@@ -111,6 +111,13 @@ export default function MerchantPage() {
       setImageError('Please select a valid photo file (PNG, JPG, JPEG, WEBP, HEIC)');
       return;
     }
+    
+    const MAX_SIZE = 100 * 1024 * 1024; // 100MB
+    if (file.size > MAX_SIZE) {
+      setImageError('Photo exceeds our extremely generous 100MB file size limit. Please select a smaller photo.');
+      return;
+    }
+
     try {
       setImageError(null);
       setCompressing(true);
@@ -590,10 +597,10 @@ export default function MerchantPage() {
                                         <Camera size={20} />
                                       </div>
                                       <p className="text-[10px] font-black uppercase tracking-widest text-neutral-700 text-center">
-                                        Tap to Snap / Upload Photo
+                                        Tap to Snap / Upload Photo (Max 100MB)
                                       </p>
                                       <p className="text-[8px] font-bold text-neutral-400 uppercase tracking-wider text-center mt-1">
-                                        Supports Camera photo or local files
+                                        Handles heavy camera images (automagically optimized for storage)
                                       </p>
                                       <span className="mt-3 bg-white border border-neutral-200 hover:border-daraz-orange hover:text-daraz-orange px-4 py-2 rounded-sm text-[9px] font-black uppercase tracking-widest text-neutral-500 shadow-sm transition-all">
                                         Choose File
