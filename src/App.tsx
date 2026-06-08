@@ -21,6 +21,7 @@ import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
 import CategoriesPage from './pages/CategoriesPage';
 import GemsVouchersPage from './pages/GemsVouchersPage';
+import MessagesPage from './pages/MessagesPage';
 import MerchantPage from './pages/MerchantPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminDashboard from './pages/AdminDashboard';
@@ -115,6 +116,7 @@ export default function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/profile" element={<ProfilePage user={user} />} />
             <Route path="/vouchers" element={<GemsVouchersPage />} />
+            <Route path="/messages" element={<MessagesPage />} />
             <Route path="/categories" element={<CategoriesPage />} />
             <Route path="/merchant" element={<MerchantPage />} />
             <Route path="/admin-login" element={<AdminLoginPage />} />

@@ -16,6 +16,8 @@ interface FirebaseContextType {
   loginAsPinAdmin: () => void;
   logoutPinAdmin: () => void;
   loginAsLocalGuest: () => void;
+  unreadCount: number;
+  setUnreadCount: (count: number) => void;
 }
 
 const FirebaseContext = createContext<FirebaseContextType>({ 
@@ -24,13 +26,24 @@ const FirebaseContext = createContext<FirebaseContextType>({
   connectionError: false,
   loginAsPinAdmin: () => {},
   logoutPinAdmin: () => {},
-  loginAsLocalGuest: () => {}
+  loginAsLocalGuest: () => {},
+  unreadCount: 13,
+  setUnreadCount: () => {}
 });
 
 export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [connectionError, setConnectionError] = useState(false);
+  const [unreadCount, setUnreadCount] = useState<number>(() => {
+    const cached = localStorage.getItem('messages_unread_count');
+    return cached !== null ? parseInt(cached, 10) : 13;
+  });
+
+  const updateUnreadCount = (count: number) => {
+    setUnreadCount(count);
+    localStorage.setItem('messages_unread_count', count.toString());
+  };
 
   const loginAsPinAdmin = async () => {
     localStorage.setItem('admin_pin_authenticated', 'true');
@@ -197,7 +210,16 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, []);
 
   return (
-    <FirebaseContext.Provider value={{ user, loading, connectionError, loginAsPinAdmin, logoutPinAdmin }}>
+    <FirebaseContext.Provider value={{ 
+      user, 
+      loading, 
+      connectionError, 
+      loginAsPinAdmin, 
+      logoutPinAdmin, 
+      loginAsLocalGuest,
+      unreadCount, 
+      setUnreadCount: updateUnreadCount 
+    }}>
       {children}
     </FirebaseContext.Provider>
   );

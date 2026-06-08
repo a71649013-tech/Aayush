@@ -156,6 +156,9 @@ export default function Navbar({ cartCount }: { cartCount: number }) {
           <Link to="/vouchers" className="text-daraz-orange hover:opacity-80 flex items-center gap-1 font-black">
             💎 Gems & Vouchers
           </Link>
+          <Link to="/messages" className="text-emerald-600 hover:opacity-80 flex items-center gap-1 font-black">
+            ✉️ Messages
+          </Link>
         </div>
       </div>
 
