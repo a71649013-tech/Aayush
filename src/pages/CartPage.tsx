@@ -8,8 +8,21 @@ import { useFirebase } from '../context/FirebaseContext';
 import { orderService } from '../services/orderService';
 import { EsewaPayment } from '../components/EsewaPayment';
 import { gemService } from '../services/gemService';
+import { APIProvider, Map as GoogleMapComponent, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
 
 import { NEPAL_CITIES } from '../constants';
+
+const GOOGLE_MAPS_KEY = process.env.GOOGLE_MAPS_PLATFORM_KEY || '';
+const hasGoogleMapsKey = Boolean(GOOGLE_MAPS_KEY) && GOOGLE_MAPS_KEY !== 'YOUR_API_KEY';
+
+const NEPAL_LANDMARKS_PRESETS = [
+  { name: 'Maitighar Mandala', city: 'Kathmandu', area: 'Maitighar', details: 'Mandala Circle, Central Expressway Rd', lat: 27.6915, lng: 85.3201 },
+  { name: 'New Baneshwor Plaza', city: 'Kathmandu', area: 'New Baneshwor', details: 'Opposite Everest Hotel, commercial hub', lat: 27.6915, lng: 85.3422 },
+  { name: 'Lakeside Pokhara', city: 'Pokhara', area: 'Lakeside', details: 'Barahi Path Compound, Lakeside Sector 6', lat: 28.2096, lng: 83.9587 },
+  { name: 'Patan Durbar Square', city: 'Lalitpur', area: 'Mangal Bazaar', details: 'Historical Durbar Square, Patan Heritage lane', lat: 27.6727, lng: 85.3252 },
+  { name: 'Balaju Bhatbhateni', city: 'Kathmandu', area: 'Balaju', details: 'Bhatbhateni Superstore compound, Bypass Rd', lat: 27.7315, lng: 85.3045 },
+  { name: 'Chabahil Chowk', city: 'Kathmandu', area: 'Chabahil', details: 'KL Tower Junction crossover', lat: 27.7174, lng: 85.3498 }
+];
 
 export default function CartPage({ cart, onRemove, onUpdateQuantity }: { 
   cart: CartItem[], 
@@ -27,7 +40,10 @@ export default function CartPage({ cart, onRemove, onUpdateQuantity }: {
     phone: '',
     city: 'Kathmandu',
     area: '',
-    details: ''
+    details: '',
+    latitude: 27.6915,
+    longitude: 85.3201,
+    hasPinned: false
   });
 
   // Voucher states
@@ -316,6 +332,239 @@ export default function CartPage({ cart, onRemove, onUpdateQuantity }: {
                   className="w-full text-xs p-3 bg-neutral-50 border border-neutral-200 outline-none focus:border-daraz-orange rounded-sm font-medium h-20 resize-none"
                   value={address.details} onChange={e => setAddress({...address, details: e.target.value})}
                 />
+
+                {/* INTERACTIVE GEOLOCATION MAP CONTAINER */}
+                <div className="mt-4 border border-neutral-150 rounded-xl overflow-hidden shadow-2xs">
+                  <div className="bg-neutral-50 px-3 py-2 border-b border-neutral-150 flex justify-between items-center bg-neutral-50/80">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-black text-neutral-800 uppercase tracking-tight flex items-center gap-1">
+                        📍 Select on Map
+                      </span>
+                    </div>
+                    {/* Simulated GPS Locater Button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (navigator.geolocation) {
+                          navigator.geolocation.getCurrentPosition(
+                            (position) => {
+                              const lat = position.coords.latitude;
+                              const lng = position.coords.longitude;
+                              setAddress(prev => ({
+                                ...prev,
+                                latitude: lat,
+                                longitude: lng,
+                                hasPinned: true,
+                                area: prev.area || 'Kathmandu Center',
+                                details: prev.details || `Precise GPS Pinpoint (${lat.toFixed(4)}, ${lng.toFixed(4)})`
+                              }));
+                            },
+                            () => {
+                              setAddress(prev => ({
+                                ...prev,
+                                latitude: 27.6915,
+                                longitude: 85.3201,
+                                hasPinned: true,
+                                details: 'Maitighar Mandala, Central Kathmandu (GPS Override)'
+                              }));
+                            }
+                          );
+                        }
+                      }}
+                      className="bg-daraz-orange text-white text-[8px] font-black uppercase px-2 py-1 rounded hover:opacity-90 active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
+                    >
+                      📡 Locate Me
+                    </button>
+                  </div>
+
+                  {/* actual Map rendering */}
+                  {hasGoogleMapsKey ? (
+                    <div className="h-44 w-full relative">
+                      <APIProvider apiKey={GOOGLE_MAPS_KEY} version="weekly">
+                        <GoogleMapComponent
+                          defaultCenter={{ lat: address.latitude, lng: address.longitude }}
+                          center={{ lat: address.latitude, lng: address.longitude }}
+                          zoom={13}
+                          mapId="ADDRESS_MAP_ID"
+                          internalUsageAttributionIds={['gmp_mcp_codeassist_v1_aistudio']}
+                          style={{ width: '100%', height: '100%' }}
+                          onClick={(e) => {
+                            if (e.detail && e.detail.latLng) {
+                              const lat = e.detail.latLng.lat;
+                              const lng = e.detail.latLng.lng;
+                              setAddress(prev => ({
+                                ...prev,
+                                latitude: lat,
+                                longitude: lng,
+                                hasPinned: true,
+                                details: `${prev.details || 'Marker Placed'} (GPS Coords: ${lat.toFixed(4)}, ${lng.toFixed(4)})`
+                              }));
+                            }
+                          }}
+                        >
+                          <AdvancedMarker 
+                            position={{ lat: address.latitude, lng: address.longitude }}
+                            gmpDraggable={true}
+                            onDragEnd={(e) => {
+                              if (e.latLng) {
+                                const lat = e.latLng.lat();
+                                const lng = e.latLng.lng();
+                                setAddress(prev => ({
+                                  ...prev,
+                                  latitude: lat,
+                                  longitude: lng,
+                                  hasPinned: true
+                                }));
+                              }
+                            }}
+                          >
+                            <Pin background="#f05625" glyphColor="#fff" borderColor="#ff4646" />
+                          </AdvancedMarker>
+                        </GoogleMapComponent>
+                      </APIProvider>
+                    </div>
+                  ) : (
+                    /* High Fidelity Interactive Vector Map fallback for local/immediate use */
+                    <div className="bg-neutral-900 relative h-44 w-full overflow-hidden text-neutral-400 select-none cursor-crosshair">
+                      {/* Grid representation */}
+                      <div className="absolute inset-0 bg-[radial-gradient(#2c2d30_1px,transparent_1px)] [background-size:14px_14px] opacity-75 z-0" />
+                      
+                      {/* Interactive mock map streets */}
+                      <svg className="absolute inset-0 w-full h-full text-neutral-800 pointer-events-none opacity-40">
+                        <circle cx="50%" cy="50%" r="55" fill="none" stroke="currentColor" strokeWidth="2.5" />
+                        <line x1="0" y1="25%" x2="100%" y2="25%" stroke="currentColor" strokeWidth="1.5" />
+                        <line x1="0" y1="65%" x2="100%" y2="65%" stroke="currentColor" strokeWidth="2" />
+                        <line x1="30%" y1="0" x2="30%" y2="100%" stroke="currentColor" strokeWidth="1.5" />
+                        <line x1="75%" y1="0" x2="75%" y2="100%" stroke="currentColor" strokeWidth="1.5" />
+                      </svg>
+
+                      {/* Landmarks hot-spots */}
+                      <div className="absolute inset-0 z-10 p-2 text-left">
+                        <p className="text-[7.5px] font-mono text-neutral-500 uppercase tracking-widest bg-neutral-950/45 px-1 py-0.5 rounded w-fit mb-1 leading-none">
+                          Kathmandu Live Routing Area Picker (Mock Map)
+                        </p>
+                        
+                        {/* Interactive clickable regions */}
+                        <div 
+                          onClick={() => setAddress(prev => ({ ...prev, city: 'Kathmandu', area: 'New Baneshwor', details: 'New Baneshwor Chowk Plaza', latitude: 27.6915, longitude: 85.3422, hasPinned: true }))}
+                          className="absolute top-[50%] left-[62%] px-1 bg-amber-500/10 border border-amber-500/30 text-[7px] font-black uppercase text-amber-500 rounded cursor-pointer hover:bg-amber-500/20 active:scale-95 transition-all"
+                        >
+                          📍 Baneshwor Plaza
+                        </div>
+                        <div 
+                          onClick={() => setAddress(prev => ({ ...prev, city: 'Kathmandu', area: 'Maitighar', details: 'Maitighar Mandala Central Circle', latitude: 27.6915, longitude: 85.3201, hasPinned: true }))}
+                          className="absolute top-[28%] left-[24%] px-1 bg-red-500/10 border border-red-500/30 text-[7px] font-black uppercase text-red-500 rounded cursor-pointer hover:bg-red-500/20 active:scale-95 transition-all"
+                        >
+                          📍 Maitighar Mandala
+                        </div>
+                        <div 
+                          onClick={() => setAddress(prev => ({ ...prev, city: 'Lalitpur', area: 'Mangal Bazaar', details: 'Patan Durbar Square Heritage Zone', latitude: 27.6727, longitude: 85.3252, hasPinned: true }))}
+                          className="absolute top-[74%] left-[45%] px-1 bg-blue-500/10 border border-blue-500/30 text-[7px] font-black uppercase text-blue-500 rounded cursor-pointer hover:bg-blue-500/20 active:scale-95 transition-all"
+                        >
+                          📍 Patan Square
+                        </div>
+                        <div 
+                          onClick={() => setAddress(prev => ({ ...prev, city: 'Kathmandu', area: 'Balaju', details: 'Balaju Ringroad near Bypass crossing', latitude: 27.7315, longitude: 85.3045, hasPinned: true }))}
+                          className="absolute top-[12%] left-[10%] px-1 bg-emerald-500/10 border border-emerald-500/30 text-[7px] font-black uppercase text-emerald-500 rounded cursor-pointer hover:bg-emerald-500/20 active:scale-95 transition-all"
+                        >
+                          📍 Balaju Bypass
+                        </div>
+                        <div 
+                          onClick={() => setAddress(prev => ({ ...prev, city: 'Kathmandu', area: 'Chabahil', details: 'Chabahil Chowk crossing near KL Tower', latitude: 27.7174, longitude: 85.3498, hasPinned: true }))}
+                          className="absolute top-[22%] left-[75%] px-1 bg-purple-500/10 border border-purple-500/30 text-[7px] font-black uppercase text-purple-500 rounded cursor-pointer hover:bg-purple-500/20 active:scale-95 transition-all"
+                        >
+                          📍 Chabahil Chowk
+                        </div>
+                      </div>
+
+                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[95px] text-white/5 font-thin tracking-normal pointer-events-none">
+                        +
+                      </div>
+
+                      {/* Click anywhere on customized map box */}
+                      <div 
+                        className="absolute inset-0 z-5"
+                        onClick={(e) => {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const x = e.clientX - rect.left;
+                          const y = e.clientY - rect.top;
+                          const pctX = x / rect.width;
+                          const pctY = y / rect.height;
+                          
+                          const simulatedLat = parseFloat((27.74 - (27.74 - 27.65) * pctY).toFixed(4));
+                          const simulatedLng = parseFloat((85.28 + (85.38 - 85.28) * pctX).toFixed(4));
+                          
+                          setAddress(prev => ({
+                            ...prev,
+                            latitude: simulatedLat,
+                            longitude: simulatedLng,
+                            hasPinned: true,
+                            details: `Simulated Custom Pin Street (${simulatedLat}°N, ${simulatedLng}°E)`
+                          }));
+                        }}
+                      />
+
+                      {/* Moving delivery pinpoint */}
+                      <div 
+                        className="absolute z-20 pointer-events-none transform -translate-x-1/2 -translate-y-full transition-all duration-300"
+                        style={{
+                          left: `${((address.longitude - 85.28) / (85.38 - 85.28)) * 100}%`,
+                          top: `${((27.74 - address.latitude) / (27.74 - 27.65)) * 100}%`
+                        }}
+                      >
+                        <div className="absolute h-6 w-6 -left-3 -top-3 rounded-full bg-daraz-orange/30 animate-ping" />
+                        <div className="text-xl filter drop-shadow-md text-center">
+                          📍
+                        </div>
+                        <div className="bg-neutral-950 border border-neutral-800 text-[6.5px] font-black text-white px-1 rounded shadow mt-[2px] whitespace-nowrap">
+                          {address.latitude.toFixed(4)}, {address.longitude.toFixed(4)}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Caption */}
+                  <div className="bg-neutral-950 p-2 text-left border-t border-neutral-800/60 font-mono text-[7.5px] text-neutral-400">
+                    <span className="text-daraz-orange font-bold uppercase block tracking-wider">🎯 Address Locator:</span>
+                    <span className="leading-tight block mt-0.5">
+                      Click preset landmarks above or tap anywhere on the radar zone to place your delivery drop-off pin immediately! It will auto-populate your coordinates state so driver routing boy can locate you.
+                    </span>
+                  </div>
+                </div>
+
+                {/* Popular Landmark Shortcuts Quick Pick */}
+                <div className="space-y-1.5 p-2 bg-neutral-50/50 rounded-lg border border-neutral-150">
+                  <p className="text-[8px] font-black text-neutral-450 uppercase tracking-widest text-left">
+                     Popular Landmarks Quick Pick:
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {NEPAL_LANDMARKS_PRESETS.map((landmark) => (
+                      <button
+                        key={landmark.name}
+                        type="button"
+                        onClick={() => {
+                          setAddress(prev => ({
+                            ...prev,
+                            city: landmark.city,
+                            area: landmark.area,
+                            details: landmark.details,
+                            latitude: landmark.lat,
+                            longitude: landmark.lng,
+                            hasPinned: true
+                          }));
+                        }}
+                        className={cn(
+                          "text-[8px] font-bold px-2 py-1 rounded border transition-colors cursor-pointer",
+                          address.area === landmark.area
+                            ? "bg-daraz-orange/10 border-daraz-orange text-daraz-orange font-extrabold"
+                            : "bg-white border-neutral-200 text-neutral-600 hover:border-neutral-300"
+                        )}
+                      >
+                        🏔️ {landmark.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
 

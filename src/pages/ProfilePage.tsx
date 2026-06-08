@@ -96,6 +96,9 @@ export default function ProfilePage({ user }: ProfilePageProps) {
       // Set random initial simulation offsets so it looks custom every time they open an order
       setDriverProgress(prev => (prev >= 95 ? 15 : prev));
       
+      const targetLat = Number(selectedOrder.address?.latitude) || 27.6915;
+      const targetLng = Number(selectedOrder.address?.longitude) || 85.3422;
+      
       timer = setInterval(() => {
         setDriverProgress(prev => {
           if (prev >= 100) {
@@ -109,11 +112,11 @@ export default function ProfilePage({ user }: ProfilePageProps) {
           setDriverDistance(remainingDist);
           setDriverEta(remainingEta);
           
-          // Interpolate GPS coords from Kathmandu Hub towards Baneshwor Area
+          // Interpolate GPS coords from Kathmandu Hub towards User's Custom coordinates
           const startLat = 27.7025;
           const startLng = 85.3201;
-          const endLat = 27.6915;
-          const endLng = 85.3422;
+          const endLat = targetLat;
+          const endLng = targetLng;
           
           const currentLat = startLat + (endLat - startLat) * (nextVal / 100);
           const currentLng = startLng + (endLng - startLng) * (nextVal / 100);
@@ -184,6 +187,38 @@ export default function ProfilePage({ user }: ProfilePageProps) {
       default: return <Package size={13} className="text-neutral-500" />;
     }
   };
+  
+  // Custom Kathmandu Delivery Area Percent Coordinate Mapper
+  const orderAddress = selectedOrder?.address || {};
+  const orderLat = Number(orderAddress.latitude) || 27.6915;
+  const orderLng = Number(orderAddress.longitude) || 85.3422;
+
+  // Map limits: Lat (27.74 to 27.65), Lng (85.28 to 85.38)
+  const destX = Math.min(92, Math.max(8, ((orderLng - 85.28) / (85.38 - 85.28)) * 100));
+  const destY = Math.min(88, Math.max(12, ((27.74 - orderLat) / (27.74 - 27.65)) * 100));
+
+  const startX = 8;
+  const startY = 28;
+
+  const len1 = Math.abs(destX - startX);
+  const len2 = Math.abs(destY - startY);
+  const totalLen = len1 + len2 || 1;
+  const splitPct = len1 / totalLen;
+
+  let scooterX = startX;
+  let scooterY = startY;
+
+  const currentProgressDec = driverProgress / 100;
+
+  if (currentProgressDec <= splitPct) {
+    const segmentProgress = currentProgressDec / splitPct;
+    scooterX = startX + (destX - startX) * segmentProgress;
+    scooterY = startY;
+  } else {
+    const segmentProgress = (currentProgressDec - splitPct) / (1 - splitPct);
+    scooterX = destX;
+    scooterY = startY + (destY - startY) * segmentProgress;
+  }
 
   return (
     <div id="account-dashboard-root" className="bg-[#f5f5f7] min-h-screen pb-36">
@@ -625,32 +660,35 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                   </div>
 
                   {/* DESTINATION (User home address marker pin) */}
-                  <div className="absolute top-[78%] right-[10%] z-10 flex flex-col items-center">
-                    <div className="bg-emerald-600 text-white p-1 rounded-full border border-neutral-800 shadow-xs flex items-center justify-center text-[11px] animate-bounce">
+                  <div 
+                    className="absolute z-10 flex flex-col items-center transition-all duration-500 ease-out"
+                    style={{ left: `${destX}%`, top: `${destY}%` }}
+                  >
+                    <div className="bg-emerald-600 text-white p-1 rounded-full border border-neutral-800 shadow-xs flex items-center justify-center text-[11px] animate-bounce font-normal">
                       🏠
                     </div>
-                    <span className="bg-neutral-950/70 border border-emerald-900 text-[7px] font-extrabold px-1 rounded text-emerald-400 mt-1 uppercase tracking-tight">Your Home</span>
+                    <span className="bg-neutral-950/70 border border-emerald-900 text-[6.5px] font-extrabold px-1 rounded text-emerald-400 mt-1 uppercase tracking-tight whitespace-nowrap">Your Home</span>
                   </div>
 
                   {/* Route progress connector path overlay */}
-                  <svg className="absolute inset-0 w-full h-full pointer-events-none z-5">
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none z-5" viewBox="0 0 100 100" preserveAspectRatio="none">
                     {/* Full path */}
                     <path 
-                      d="M 50,65 L 140,65 L 140,165 L 340,165" 
+                      d={`M ${startX},${startY} L ${destX},${startY} L ${destX},${destY}`} 
                       fill="none" 
                       stroke="rgba(255, 255, 255, 0.15)" 
-                      strokeWidth="3.5" 
+                      strokeWidth="2" 
                       strokeLinecap="round"
                     />
                     {/* Passed path in glowing color */}
                     <path 
                       id="glowing-route"
-                      d="M 50,65 L 140,65 L 140,165 L 340,165" 
+                      d={`M ${startX},${startY} L ${destX},${startY} L ${destX},${destY}`} 
                       fill="none" 
                       stroke="#f05625" 
-                      strokeWidth="3" 
-                      strokeDasharray="400"
-                      strokeDashoffset={400 - (400 * (driverProgress / 100))}
+                      strokeWidth="2" 
+                      strokeDasharray="200"
+                      strokeDashoffset={200 - (200 * (driverProgress / 100))}
                       strokeLinecap="round"
                       className="transition-all duration-1000 ease-linear"
                     />
@@ -658,46 +696,21 @@ export default function ProfilePage({ user }: ProfilePageProps) {
 
                   {/* DELIVER BOY MOVING SCOOTER MARKER */}
                   {selectedOrder.status.toLowerCase() !== 'pending' && selectedOrder.status.toLowerCase() !== 'processing' ? (
-                    (() => {
-                      // Calculate marker top and left relative positions mathematically
-                      let markerLeft = "50px";
-                      let markerTop = "65px";
-
-                      if (driverProgress < 30) {
-                        // Segment 1 (Horizontal)
-                        const pct = driverProgress / 30;
-                        markerLeft = `${50 + (140 - 50) * pct}px`;
-                        markerTop = "52px";
-                      } else if (driverProgress < 60) {
-                        // Segment 2 (Vertical)
-                        const pct = (driverProgress - 30) / 30;
-                        markerLeft = "125px";
-                        markerTop = `${52 + (152 - 52) * pct}px`;
-                      } else {
-                        // Segment 3 (Horizontal Baneshwor)
-                        const pct = (driverProgress - 60) / 40;
-                        markerLeft = `${125 + (310 - 125) * pct}px`;
-                        markerTop = "152px";
-                      }
-
-                      return (
-                        <div 
-                          className="absolute z-10 transition-all duration-1000 ease-linear transform -translate-x-1/2 -translate-y-1/2 cursor-pointer group/rider"
-                          style={{ left: markerLeft, top: markerTop }}
-                        >
-                          {/* Pulsing radar circle */}
-                          <div className="absolute inset-0 rounded-full bg-daraz-orange/30 animate-ping -m-2" />
-                          <div className="bg-[#f05625] text-white h-7 w-7 rounded-full border-2 border-white flex items-center justify-center shadow-md font-bold text-sm">
-                            🛵
-                          </div>
-                          
-                          {/* Mini info bubble on hover */}
-                          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-neutral-950 border border-neutral-800 text-[7.5px] font-black text-white px-1.5 py-0.5 rounded shadow-lg whitespace-nowrap uppercase tracking-tight pointer-events-none opacity-90">
-                            Subash: {driverDistance} km away
-                          </div>
-                        </div>
-                      );
-                    })()
+                    <div 
+                      className="absolute z-10 transition-all duration-1000 ease-linear transform -translate-x-1/2 -translate-y-1/2 cursor-pointer group/rider"
+                      style={{ left: `${scooterX}%`, top: `${scooterY}%` }}
+                    >
+                      {/* Pulsing radar circle */}
+                      <div className="absolute inset-0 rounded-full bg-daraz-orange/30 animate-ping -m-2" />
+                      <div className="bg-[#f05625] text-white h-7 w-7 rounded-full border-2 border-white flex items-center justify-center shadow-md font-bold text-sm">
+                        🛵
+                      </div>
+                      
+                      {/* Mini info bubble on hover */}
+                      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-neutral-950 border border-neutral-800 text-[7.5px] font-black text-white px-1.5 py-0.5 rounded shadow-lg whitespace-nowrap uppercase tracking-tight pointer-events-none opacity-90">
+                        Subash: {driverDistance} km away
+                      </div>
+                    </div>
                   ) : null}
 
                   {/* Top bar GPS stats overview */}
