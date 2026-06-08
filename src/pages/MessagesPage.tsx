@@ -17,6 +17,19 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useFirebase } from '../context/FirebaseContext';
 import { cn } from '../lib/utils';
+import { 
+  collection, 
+  addDoc, 
+  onSnapshot, 
+  query, 
+  orderBy, 
+  serverTimestamp, 
+  doc, 
+  getDocs, 
+  deleteDoc, 
+  limit 
+} from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 interface Chat {
   id: string;
@@ -34,7 +47,7 @@ interface Chat {
 
 export default function MessagesPage() {
   const navigate = useNavigate();
-  const { unreadCount, setUnreadCount } = useFirebase();
+  const { user, unreadCount, setUnreadCount } = useFirebase();
   const [activeCategory, setActiveCategory] = useState<'chats' | 'orders' | 'activities' | 'promos'>('promos');
   
   // Localized mock data
@@ -156,9 +169,120 @@ export default function MessagesPage() {
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [typedMessage, setTypedMessage] = useState('');
 
+  const currentUserId = user?.id || 'guest-user';
+
+  // Synchronize top-level chat lists metadata in real-time based on actual Firestore data
+  useEffect(() => {
+    const unsubscribes = chats.map(c => {
+      const chatDocId = `${c.id}-${currentUserId}`;
+      const q = query(
+        collection(db, 'chats', chatDocId, 'messages'),
+        orderBy('createdAt', 'desc'),
+        limit(1)
+      );
+      
+      return onSnapshot(q, (snapshot) => {
+        if (!snapshot.empty) {
+          const docData = snapshot.docs[0].data();
+          let timeStr = 'Just now';
+          if (docData.createdAt) {
+            const date = docData.createdAt.toDate ? docData.createdAt.toDate() : new Date(docData.createdAt);
+            timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          }
+          
+          setChats(prev => prev.map(item => {
+            if (item.id === c.id) {
+              return {
+                ...item,
+                lastMessage: docData.text || item.lastMessage,
+                time: timeStr
+              };
+            }
+            return item;
+          }));
+        }
+      });
+    });
+
+    return () => {
+      unsubscribes.forEach(unsub => unsub());
+    };
+  }, [currentUserId]);
+
+  // Listen to active chat message stream in real-time
+  useEffect(() => {
+    if (!selectedChat) return;
+
+    const chatDocId = `${selectedChat.id}-${currentUserId}`;
+    const messagesRef = collection(db, 'chats', chatDocId, 'messages');
+    const q = query(messagesRef, orderBy('createdAt', 'asc'));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      if (snapshot.empty) {
+        // Automatically seed/bootstrap default chats history on the active database
+        const initialPresetMsgs = chats.find(c => c.id === selectedChat.id)?.messages || [];
+        initialPresetMsgs.forEach(async (item) => {
+          try {
+            await addDoc(messagesRef, {
+              sender: item.sender,
+              text: item.text,
+              createdAt: serverTimestamp()
+            });
+          } catch (e) {
+            console.error("Failed to seed initial message to Firestore:", e);
+          }
+        });
+        return;
+      }
+
+      const dbMsgs = snapshot.docs.map(doc => {
+        const data = doc.data();
+        let timeStr = 'Just now';
+        if (data.createdAt) {
+          const date = data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt);
+          timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+        return {
+          sender: data.sender as 'user' | 'merchant',
+          text: data.text || '',
+          time: timeStr
+        };
+      });
+
+      // Maintain internal states
+      setChats(prev => prev.map(c => {
+        if (c.id === selectedChat.id) {
+          return {
+            ...c,
+            messages: dbMsgs,
+            lastMessage: dbMsgs[dbMsgs.length - 1]?.text || c.lastMessage,
+            time: dbMsgs[dbMsgs.length - 1]?.time || c.time
+          };
+        }
+        return c;
+      }));
+
+      setSelectedChat(prev => {
+        if (prev && prev.id === selectedChat.id) {
+          return {
+            ...prev,
+            messages: dbMsgs,
+            lastMessage: dbMsgs[dbMsgs.length - 1]?.text || prev.lastMessage,
+            time: dbMsgs[dbMsgs.length - 1]?.time || prev.time
+          };
+        }
+        return prev;
+      });
+    }, (error) => {
+      console.error("Firestore active chat listener error:", error);
+    });
+
+    return () => unsubscribe();
+  }, [selectedChat?.id, currentUserId]);
+
   // Auto-replies mechanism
   const triggerAutoReply = (chatId: string, userText: string) => {
-    setTimeout(() => {
+    setTimeout(async () => {
       let replyText = "Thank you for writing to us in Nepali Mart! We will respond to you shortly.";
       
       const text = userText.toLowerCase();
@@ -178,68 +302,39 @@ export default function MessagesPage() {
         replyText = "Greetings from Ilam! 🍃 Our tea is sun-dried and organic. Fresh batches of Orthodox Green Tea and Golden Tips are packed safely. We ship directly to Kathmandu.";
       }
 
-      setChats(prev => prev.map(c => {
-        if (c.id === chatId) {
-          const updatedMessages = [
-            ...c.messages,
-            { sender: 'merchant' as const, text: replyText, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
-          ];
-          return {
-            ...c,
-            lastMessage: replyText,
-            time: 'Just now',
-            messages: updatedMessages
-          };
-        }
-        return c;
-      }));
-
-      // Update active viewing chat as well
-      setSelectedChat(prev => {
-        if (prev && prev.id === chatId) {
-          return {
-            ...prev,
-            messages: [
-              ...prev.messages,
-              { sender: 'merchant' as const, text: replyText, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
-            ]
-          };
-        }
-        return prev;
-      });
+      try {
+        const chatDocId = `${chatId}-${currentUserId}`;
+        const messagesRef = collection(db, 'chats', chatDocId, 'messages');
+        await addDoc(messagesRef, {
+          sender: 'merchant',
+          text: replyText,
+          createdAt: serverTimestamp()
+        });
+      } catch (err) {
+        console.error("Error saving merchant auto-reply in Firestore:", err);
+      }
     }, 1200);
   };
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!typedMessage.trim() || !selectedChat) return;
-
-    const userMsg = {
-      sender: 'user' as const,
-      text: typedMessage.trim(),
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-
-    setChats(prev => prev.map(c => {
-      if (c.id === selectedChat.id) {
-        return {
-          ...c,
-          lastMessage: typedMessage.trim(),
-          time: 'Just now',
-          messages: [...c.messages, userMsg],
-          unread: false
-        };
-      }
-      return c;
-    }));
-
-    setSelectedChat(prev => prev ? {
-      ...prev,
-      messages: [...prev.messages, userMsg]
-    } : null);
 
     const textToSubmit = typedMessage.trim();
     setTypedMessage('');
-    triggerAutoReply(selectedChat.id, textToSubmit);
+
+    try {
+      const chatDocId = `${selectedChat.id}-${currentUserId}`;
+      const messagesRef = collection(db, 'chats', chatDocId, 'messages');
+      await addDoc(messagesRef, {
+        sender: 'user',
+        text: textToSubmit,
+        createdAt: serverTimestamp()
+      });
+
+      triggerAutoReply(selectedChat.id, textToSubmit);
+    } catch (err) {
+      console.error("Error saving user message in Firestore:", err);
+    }
   };
 
   // Clean-all read sweeper
@@ -428,10 +523,26 @@ export default function MessagesPage() {
             </div>
           </div>
           <button 
-            onClick={() => {
-              // Delete history
+            onClick={async () => {
+              // Delete history locally
               setChats(prev => prev.map(c => c.id === selectedChat.id ? { ...c, messages: [] } : c));
               setSelectedChat(prev => prev ? { ...prev, messages: [] } : null);
+
+              // Delete history securely in firestore
+              try {
+                const chatDocId = `${selectedChat.id}-${currentUserId}`;
+                const messagesRef = collection(db, 'chats', chatDocId, 'messages');
+                const messagesSnap = await getDocs(messagesRef);
+                messagesSnap.forEach(async (d) => {
+                  try {
+                    await deleteDoc(doc(db, 'chats', chatDocId, 'messages', d.id));
+                  } catch (delErr) {
+                    console.error("Failed to delete individual message doc:", delErr);
+                  }
+                });
+              } catch (err) {
+                console.error("Failed to clean firestore message log:", err);
+              }
             }}
             title="Clear Chat History"
             className="p-1.5 rounded-full hover:bg-red-50 text-neutral-400 hover:text-red-500 transition-colors cursor-pointer"

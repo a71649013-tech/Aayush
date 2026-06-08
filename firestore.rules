@@ -111,5 +111,13 @@ service cloud.firestore {
         )
       );
     }
+
+    // Real-Time Chat Channels & Messages
+    match /chats/{chatId} {
+      allow read, write: if true;
+      match /messages/{messageId} {
+        allow read, write: if true;
+      }
+    }
   }
 }

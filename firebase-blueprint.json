@@ -60,6 +60,20 @@
         "vouchers": { "type": "array" }
       },
       "required": ["name", "email", "role"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "A real-time message sent between user and merchant",
+      "type": "object",
+      "properties": {
+        "chatId": { "type": "string" },
+        "sender": { "type": "string", "enum": ["user", "merchant"] },
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "text": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["chatId", "sender", "senderId", "text", "createdAt"]
     }
   },
   "firestore": {
@@ -78,6 +92,10 @@
     "/users/{userId}": {
       "schema": "User",
       "description": "User profiles"
+    },
+    "/chats/{chatId}/messages/{messageId}": {
+      "schema": "ChatMessage",
+      "description": "Subcollection of chat channel messages"
     }
   }
 }
