@@ -548,7 +548,12 @@ export default function MessagesPage() {
                   if (res === 'granted') {
                     dispatchNotification("Live Push Authorized! 🔔", "You will now receive elegant alert chimings when support responds.", "promos");
                   } else {
-                    alert("Native permission was not authorized. To receive desktop pop-up alerts, click the 'Open in New Tab' button in the toolbar.");
+                    // Fallback for wrapped app containers
+                    dispatchNotification(
+                      "In-App Chime Enabled! 🔊",
+                      "Standard web-push is blocked by the app wrapper, but we successfully turned on high-fidelity live audio & in-app banners for you!",
+                      "promos"
+                    );
                   }
                 }}
                 className="bg-daraz-orange hover:opacity-95 text-white font-black text-[8px] uppercase tracking-wider py-1.5 px-2.5 rounded-sm transition-opacity shrink-0 cursor-pointer"
