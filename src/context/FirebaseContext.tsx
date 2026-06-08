@@ -1,5 +1,10 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
+import { 
+  User as FirebaseUser, 
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword
+} from 'firebase/auth';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { User } from '../types';
@@ -25,7 +30,7 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [loading, setLoading] = useState(true);
   const [connectionError, setConnectionError] = useState(false);
 
-  const loginAsPinAdmin = () => {
+  const loginAsPinAdmin = async () => {
     localStorage.setItem('admin_pin_authenticated', 'true');
     setUser({
       id: 'pin-admin',
@@ -33,10 +38,35 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       email: 'admin@nepalimart.com',
       role: 'admin'
     });
+
+    try {
+      const email = 'admin@nepalimart.com';
+      const password = 'admin_nepalimart_2026';
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (err: any) {
+        if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
+          try {
+            await createUserWithEmailAndPassword(auth, email, password);
+          } catch (signUpErr) {
+            console.error("Autobootstrap masteradmin account error:", signUpErr);
+          }
+        } else {
+          console.error("Silent sign in masteradmin error:", err);
+        }
+      }
+    } catch (e) {
+      console.error("Firebase background PIN auth integration error:", e);
+    }
   };
 
-  const logoutPinAdmin = () => {
+  const logoutPinAdmin = async () => {
     localStorage.removeItem('admin_pin_authenticated');
+    try {
+      await auth.signOut();
+    } catch (e) {
+      console.error("Signout error during PIN-auth logoff:", e);
+    }
     setUser(null);
   };
 

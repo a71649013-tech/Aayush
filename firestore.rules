@@ -20,7 +20,12 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && getUserData().role == 'admin';
+      return isSignedIn() && (
+        getUserData().role == 'admin' ||
+        request.auth.token.email == 'a71649013@gmail.com' ||
+        request.auth.token.email == 'rudhrasha44@gmail.com' ||
+        request.auth.token.email == 'admin@nepalimart.com'
+      );
     }
 
     function isOwner(userId) {
@@ -96,11 +101,11 @@ service cloud.firestore {
       allow list: if isAdmin();
       allow create: if isSignedIn() && request.auth.uid == userId && (
         incoming().role == 'user' || 
-        (incoming().role == 'admin' && (incoming().email == 'a71649013@gmail.com' || incoming().email == 'rudhrasha44@gmail.com'))
+        (incoming().role == 'admin' && (incoming().email == 'a71649013@gmail.com' || incoming().email == 'rudhrasha44@gmail.com' || incoming().email == 'admin@nepalimart.com'))
       );
       allow update: if isAdmin() || (
         isSignedIn() && request.auth.uid == userId && (
-          (incoming().role == 'admin' && (incoming().email == 'a71649013@gmail.com' || incoming().email == 'rudhrasha44@gmail.com')) ||
+          (incoming().role == 'admin' && (incoming().email == 'a71649013@gmail.com' || incoming().email == 'rudhrasha44@gmail.com' || incoming().email == 'admin@nepalimart.com')) ||
           (incoming().role == 'merchant' && existing().role == 'user') ||
           (incoming().role == existing().role)
         )
