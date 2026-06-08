@@ -25,6 +25,8 @@ export default function LoginPage() {
         setError('This domain is not authorized in the Firebase console for Google Sign-In. You need to add this domain to "Authorized domains" under Authentication settings.');
       } else if (err.code === 'auth/operation-not-allowed') {
         setError('Google Sign-In is not enabled as a sign-in provider in your Firebase project. Please enable it in the Firebase console.');
+      } else if (err.code === 'auth/popup-closed-by-user' || err.message?.includes('popup-closed-by-user') || err.message?.includes('popup')) {
+        setError('GOOGLE LOGIN ERROR: The Google login popup was blocked or closed. This happens because the app is running nested in an iframe preview. To fix this:\n\n1. Click "Open in New Tab" at the top of your preview screen to run the app outside the iframe, then Google login will work seamlessly.\n2. Or register a test account below using standard Email & Password!');
       } else {
         setError(`Google login failed: ${err.message || err.code || 'Please try again.'}`);
       }
@@ -119,7 +121,16 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {error && <p className="text-[10px] text-red-500 font-bold uppercase">{error}</p>}
+              {error && (
+                <div className={cn(
+                  "p-3 text-[11px] font-semibold rounded-sm leading-relaxed whitespace-pre-wrap",
+                  error.includes('GOOGLE LOGIN ERROR')
+                    ? "bg-amber-50 border border-amber-200 text-amber-800 text-left"
+                    : "bg-red-50 border border-red-150 text-red-600 uppercase"
+                )}>
+                  {error}
+                </div>
+              )}
 
               <button 
                 type="submit"
