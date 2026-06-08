@@ -106,7 +106,13 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
   onUpdateProduct: (id: string, p: any) => void,
   onDeleteProduct: (id: string) => void
 }) {
-  const { user, loading } = useFirebase();
+  const { 
+    user, 
+    loading, 
+    nativePermission, 
+    requestNotificationPermission, 
+    dispatchNotification 
+  } = useFirebase();
   const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'messages'>('orders');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -662,6 +668,62 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
                   <div className="flex items-center gap-2 pb-2 border-b border-neutral-200">
                     <Bell className="text-daraz-orange" size={20} />
                     <h3 className="text-sm font-black uppercase tracking-tight">Admin Notify Broadcaster</h3>
+                  </div>
+
+                  {/* Browser Push Control Service */}
+                  <div className="bg-white border text-left border-neutral-200 p-4 rounded-sm flex flex-col space-y-3 shadow-xs">
+                    <div className="flex items-center justify-between border-b pb-2 border-neutral-100">
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-neutral-800">Browser System Push Service</p>
+                        <p className="text-[8px] text-neutral-400 font-bold uppercase tracking-tight mt-0.5">Device Permission Status</p>
+                      </div>
+                      <span className={cn(
+                        "text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-sm shrink-0",
+                        nativePermission === 'granted' ? "bg-green-50 text-green-600 border border-green-100" :
+                        nativePermission === 'denied' ? "bg-red-50 text-red-500 border border-red-100" :
+                        "bg-orange-50 text-daraz-orange border border-orange-100"
+                      )}>
+                        {nativePermission === 'granted' ? '● AUTHORIZED' :
+                         nativePermission === 'denied' ? '✖ BLOCKED' :
+                         nativePermission === 'unsupported' ? '⚠ UNSUPPORTED' :
+                         '● DEFAULTS'}
+                      </span>
+                    </div>
+                    
+                    <p className="text-[9px] text-neutral-500 leading-relaxed font-semibold">
+                      Enable real-time push alerts to receive immediate system alarms both inside the workspace and natively on your device desktop.
+                    </p>
+
+                    <div className="flex gap-2">
+                      <button 
+                        type="button"
+                        onClick={async () => {
+                          const res = await requestNotificationPermission();
+                          if (res === 'granted') {
+                            dispatchNotification("Notifications Activated!", "Nepali Mart system notifications are now fully authorized.", "promos");
+                          } else {
+                            alert("Native permission was not authorized. For secure desktop notification delivery, please click the 'Open in New Tab' button in AI Studio top right corner.");
+                          }
+                        }}
+                        className="flex-1 bg-neutral-950 hover:bg-neutral-850 text-white text-[9px] font-bold uppercase tracking-wider py-2 px-2.5 rounded-sm text-center transition-colors cursor-pointer"
+                      >
+                        🔑 Enable Desk Push
+                      </button>
+                      
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          dispatchNotification(
+                            "Device Alert Chime Tested! 🔔",
+                            "High-fidelity visual banner & audio tone connected successfully.",
+                            "promos"
+                          );
+                        }}
+                        className="flex-1 bg-white border border-neutral-250 text-neutral-800 hover:bg-neutral-50 text-[9px] font-bold uppercase tracking-wider py-2 px-2.5 rounded-sm text-center transition-colors cursor-pointer"
+                      >
+                        🔊 Live Chime Test
+                      </button>
+                    </div>
                   </div>
 
                   {broadcastSuccess && (

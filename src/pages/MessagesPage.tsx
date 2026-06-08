@@ -48,7 +48,14 @@ interface Chat {
 
 export default function MessagesPage() {
   const navigate = useNavigate();
-  const { user, unreadCount, setUnreadCount } = useFirebase();
+  const { 
+    user, 
+    unreadCount, 
+    setUnreadCount,
+    nativePermission,
+    requestNotificationPermission,
+    dispatchNotification
+  } = useFirebase();
   const [activeCategory, setActiveCategory] = useState<'chats' | 'orders' | 'activities' | 'promos'>('promos');
   
   // Localized mock data
@@ -522,6 +529,37 @@ export default function MessagesPage() {
               <CheckCheck size={14} className="text-emerald-500" />
               Mark all as read
             </button>
+          </div>
+
+          {/* Active Client Push Authorization Info */}
+          <div className="mt-4 p-3 bg-neutral-50 rounded-sm border border-neutral-100 flex items-center justify-between gap-3 text-left">
+            <div className="min-w-0">
+              <p className="text-[10px] font-black uppercase text-neutral-800 flex items-center gap-1">
+                <Bell size={11} className="text-daraz-orange" /> live push notifications
+              </p>
+              <p className="text-[8px] text-neutral-400 font-bold uppercase mt-0.5 truncate">
+                {nativePermission === 'granted' ? '🎉 Desktop Alert Connected' : 'Turn on to receive instant chat reply chimings!'}
+              </p>
+            </div>
+            {nativePermission !== 'granted' ? (
+              <button
+                onClick={async () => {
+                  const res = await requestNotificationPermission();
+                  if (res === 'granted') {
+                    dispatchNotification("Live Push Authorized! 🔔", "You will now receive elegant alert chimings when support responds.", "promos");
+                  } else {
+                    alert("Native permission was not authorized. To receive desktop pop-up alerts, click the 'Open in New Tab' button in the toolbar.");
+                  }
+                }}
+                className="bg-daraz-orange hover:opacity-95 text-white font-black text-[8px] uppercase tracking-wider py-1.5 px-2.5 rounded-sm transition-opacity shrink-0 cursor-pointer"
+              >
+                Enable
+              </button>
+            ) : (
+              <span className="text-[7px] font-black uppercase tracking-widest text-green-600 bg-green-50 px-2 py-1 rounded-sm border border-green-150 shrink-0">
+                ✓ ACTIVE
+              </span>
+            )}
           </div>
 
           {/* Core Categories Row styled strictly like the uploaded screenshot */}

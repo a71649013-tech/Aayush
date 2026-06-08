@@ -26,6 +26,7 @@ import MerchantPage from './pages/MerchantPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminDashboard from './pages/AdminDashboard';
 import MobileBottomNav from './components/MobileBottomNav';
+import NotificationToast from './components/NotificationToast';
 import { productService } from './services/productService';
 import { initUnityAds } from './services/unityAdsService';
 import { CartItem, Product } from './types';
@@ -94,6 +95,7 @@ export default function App() {
 
   return (
     <Router>
+      <NotificationToast />
       <div className="min-h-screen w-full bg-neutral-50 font-sans text-neutral-900 md:border-x md:border-neutral-200 max-w-7xl mx-auto md:shadow-2xl overflow-x-hidden relative flex flex-col">
         {connectionError && (
           <div className="bg-daraz-orange text-white text-[10px] font-black uppercase tracking-[0.2em] py-2 px-4 text-center sticky top-0 z-[100] border-b border-white/20">
