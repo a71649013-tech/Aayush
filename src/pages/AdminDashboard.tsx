@@ -443,7 +443,20 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
             <h1 className="text-4xl font-black italic uppercase tracking-tighter text-blue-600">Admin Console</h1>
             <p className="text-neutral-500 font-medium uppercase text-[10px] tracking-widest mt-1">Management Console / v2.4.0</p>
           </div>
-          <div className="flex gap-4">
+          <div className="flex flex-wrap gap-4">
+            <button 
+              onClick={() => {
+                setActiveTab('messages');
+                setTimeout(() => {
+                  const el = document.getElementById('management-area');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }, 80);
+              }}
+              className="px-6 py-3 border-2 border-blue-500 bg-blue-600 text-white text-[10px] font-bold uppercase tracking-widest hover:bg-blue-700 flex items-center gap-2 group transition-all rounded-sm shadow-md cursor-pointer shrink-0"
+              title="Send broadcast notifications and respond to live support chats"
+            >
+              <MessageSquare size={14} className="text-white animate-pulse" /> Send Alert / Direct Message
+            </button>
             <button 
               onClick={handleDeleteAllProducts}
               className="px-6 py-3 border-2 border-red-200 bg-red-50 text-red-600 text-[10px] font-bold uppercase tracking-widest hover:bg-red-100 flex items-center gap-2 group transition-all rounded-sm shadow-sm"
@@ -493,7 +506,7 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
         </div>
 
         {/* Management Area */}
-        <div className="bg-white rounded-sm shadow-sm overflow-hidden">
+        <div id="management-area" className="bg-white rounded-sm shadow-sm overflow-hidden">
           <div className="flex border-b border-neutral-100">
             <button 
               onClick={() => setActiveTab('orders')}
