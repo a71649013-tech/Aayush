@@ -437,46 +437,49 @@ export default function ProfilePage({ user }: ProfilePageProps) {
           </div>
 
           {/* DYNAMIC ORDERS LIST DRAWER AREA BASED ON CURRENT FILTER CRITERIA */}
-          {activeFilter !== 'all' && (
-            <div className="pt-3 border-t border-neutral-100 bg-neutral-50/70 p-3 rounded-lg space-y-2.5 animate-fadeIn">
-              <div className="flex justify-between items-center text-[9px] font-black uppercase text-neutral-400 tracking-wider">
-                <span>Filtering: {activeFilter.replace('-', ' ')} ({currentDisplayOrders.length})</span>
-                <button onClick={() => setActiveFilter('all')} className="text-blue-600 font-bold hover:underline">Clear Filter</button>
-              </div>
-
-              {currentDisplayOrders.length === 0 ? (
-                <p className="text-[10px] text-neutral-400 py-3 text-center font-bold uppercase tracking-widest">
-                  No orders match this logistics category right now.
-                </p>
-              ) : (
-                currentDisplayOrders.map((order) => (
-                  <div 
-                    key={order.id} 
-                    onClick={() => setSelectedOrder(selectedOrder?.id === order.id ? null : order)}
-                    className="p-3 bg-white rounded-md border border-neutral-150 hover:border-daraz-orange/40 transition-all cursor-pointer shadow-3xs"
-                  >
-                    <div className="flex justify-between items-center">
-                      <span className="text-[9.5px] font-black text-neutral-800">
-                        📦 ORDER #{order.id.substring(0, 8).toUpperCase()}
-                      </span>
-                      <span className={cn("text-[8.5px] font-black uppercase px-2 py-0.5 rounded border", getStatusColor(order.status))}>
-                        {order.status}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2 mt-2">
-                      <div className="text-[10px] text-neutral-600 font-bold flex-1 text-left truncate">
-                        {order.items.map(item => `${item.quantity}x ${item.name}`).join(', ')}
-                      </div>
-                      <span className="text-[10.5px] font-black text-daraz-orange shrink-0">
-                        रू {order.total.toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                ))
+          <div className="pt-3 border-t border-neutral-100 bg-neutral-50/70 p-3 rounded-lg space-y-2.5 animate-fadeIn">
+            <div className="flex justify-between items-center text-[9px] font-black uppercase text-neutral-400 tracking-wider">
+              <span>Status: {activeFilter === 'all' ? 'All Orders' : activeFilter.replace('-', ' ')} ({currentDisplayOrders.length})</span>
+              {activeFilter !== 'all' && (
+                <button onClick={() => setActiveFilter('all')} className="text-blue-600 font-bold hover:underline transition-colors">Clear Filter</button>
               )}
             </div>
-          )}
+
+            {currentDisplayOrders.length === 0 ? (
+              <p className="text-[10px] text-neutral-400 py-3 text-center font-bold uppercase tracking-widest">
+                {activeFilter === 'all' ? 'You have not placed any orders yet.' : 'No orders match this logistics category.'}
+              </p>
+            ) : (
+              currentDisplayOrders.map((order) => (
+                <div 
+                  key={order.id} 
+                  onClick={() => setSelectedOrder(selectedOrder?.id === order.id ? null : order)}
+                  className={cn(
+                    "p-3 bg-white rounded-md border transition-all cursor-pointer shadow-3xs text-left",
+                    selectedOrder?.id === order.id ? "border-daraz-orange ring-1 ring-daraz-orange/20" : "border-neutral-150 hover:border-daraz-orange/40"
+                  )}
+                >
+                  <div className="flex justify-between items-center">
+                    <span className="text-[9.5px] font-black text-neutral-800">
+                      📦 ORDER #{order.id.substring(0, 8).toUpperCase()}
+                    </span>
+                    <span className={cn("text-[8px] font-black uppercase px-2 py-0.5 rounded border", getStatusColor(order.status))}>
+                      {order.status}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2 mt-2">
+                    <div className="text-[10px] text-neutral-600 font-bold flex-1 text-left truncate">
+                      {order.items.map(item => `${item.quantity}x ${item.name}`).join(', ')}
+                    </div>
+                    <span className="text-[10.5px] font-black text-daraz-orange shrink-0">
+                      रू {order.total.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
         {/* EXPANDABLE SELECTED ACTIVE ORDER LOGISTICS AND TRACKING MAP */}
