@@ -15,6 +15,7 @@ interface FirebaseContextType {
   connectionError: boolean;
   loginAsPinAdmin: () => void;
   logoutPinAdmin: () => void;
+  loginAsLocalGuest: () => void;
 }
 
 const FirebaseContext = createContext<FirebaseContextType>({ 
@@ -22,7 +23,8 @@ const FirebaseContext = createContext<FirebaseContextType>({
   loading: true, 
   connectionError: false,
   loginAsPinAdmin: () => {},
-  logoutPinAdmin: () => {}
+  logoutPinAdmin: () => {},
+  loginAsLocalGuest: () => {}
 });
 
 export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -60,8 +62,23 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  const loginAsLocalGuest = () => {
+    localStorage.setItem('local_guest_authenticated', 'true');
+    setUser({
+      id: 'local-guest',
+      name: 'Local Tester',
+      email: 'guest@nepalimart.com',
+      role: 'user',
+      gems: 450,
+      streak: 3,
+      lastClaimed: '',
+      vouchers: []
+    });
+  };
+
   const logoutPinAdmin = async () => {
     localStorage.removeItem('admin_pin_authenticated');
+    localStorage.removeItem('local_guest_authenticated');
     try {
       await auth.signOut();
     } catch (e) {
@@ -84,6 +101,7 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         }
 
         const isPinAuth = localStorage.getItem('admin_pin_authenticated') === 'true';
+        const isLocalGuest = localStorage.getItem('local_guest_authenticated') === 'true';
 
         if (fbUser) {
           const userDocRef = doc(db, 'users', fbUser.uid);
@@ -143,6 +161,17 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
               name: 'Store Admin',
               email: 'admin@nepalimart.com',
               role: 'admin'
+            });
+          } else if (isLocalGuest) {
+            setUser({
+              id: 'local-guest',
+              name: 'Local Tester',
+              email: 'guest@nepalimart.com',
+              role: 'user',
+              gems: 450,
+              streak: 3,
+              lastClaimed: '',
+              vouchers: []
             });
           } else {
             setUser(null);

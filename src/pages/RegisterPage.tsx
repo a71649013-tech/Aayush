@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, Smartphone, ArrowRight } from 'lucide-react';
+import { Mail, Lock, User, Smartphone, ArrowRight, HelpCircle } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { registerWithEmail } from '../lib/firebase';
+import { useFirebase } from '../context/FirebaseContext';
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -13,6 +14,7 @@ export default function RegisterPage() {
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { loginAsLocalGuest } = useFirebase();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,7 +34,7 @@ export default function RegisterPage() {
       if (err.code === 'auth/email-already-in-use') {
         setError('This email is already registered.');
       } else if (err.code === 'auth/operation-not-allowed') {
-        setError('Email/Password registration is not enabled in your Firebase Authentication Console. Please enable it in the Firebase Console.');
+        setError('FIREBASE_OPERATION_NOT_ALLOWED');
       } else {
         setError(`Registration failed: ${err.message || 'Please try again.'}`);
       }
@@ -113,7 +115,55 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {error && <p className="text-[10px] text-red-500 font-bold uppercase">{error}</p>}
+            {error && (
+              error === 'FIREBASE_OPERATION_NOT_ALLOWED' ? (
+                <div className="bg-amber-50/90 border border-amber-200 rounded-sm p-4 text-left space-y-3 shadow-sm select-text text-neutral-800">
+                  <div className="flex gap-2.5">
+                    <div className="p-1 h-fit bg-amber-100 rounded-full text-amber-600 mt-0.5">
+                      <HelpCircle size={18} />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black uppercase tracking-wider text-amber-950">
+                        Firebase Email/Password Auth Disabled
+                      </h4>
+                      <p className="text-[11px] leading-relaxed text-amber-900 mt-1 font-medium">
+                        Your Firebase project does not have the **Email/Password** sign-in provider enabled yet.
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white/80 rounded border border-amber-200/50 p-3 space-y-2 text-[10.5px]">
+                    <p className="font-bold text-amber-950 uppercase tracking-wider">How to enable it (takes 30 seconds):</p>
+                    <ol className="list-decimal pl-4 space-y-1.5 text-neutral-700 leading-normal font-medium">
+                      <li>
+                        Go to your <a href="https://console.firebase.google.com/project/ai-studio-071403a4-bd3d-49d9-94db-c87381642bd4/authentication/providers" target="_blank" rel="noopener noreferrer" className="text-blue-600 font-bold underline hover:text-blue-800">Firebase Console (Click here)</a>.
+                      </li>
+                      <li>Under <strong>Build &gt; Authentication</strong>, select the <strong>Sign-in method</strong> tab.</li>
+                      <li>Click <strong>Add new provider</strong> (or edit the disabled <strong>Email/Password</strong>).</li>
+                      <li>Toggle it to <strong>Enable</strong> and click <strong>Save</strong>!</li>
+                    </ol>
+                  </div>
+
+                  <div className="pt-2 border-t border-amber-200/50 flex flex-col gap-2">
+                    <p className="text-[10px] text-amber-900 font-bold uppercase tracking-wider text-center">Or skip settings & play instantly:</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        loginAsLocalGuest();
+                        navigate('/');
+                      }}
+                      className="w-full bg-amber-600 hover:bg-amber-700 text-white font-black uppercase text-[10px] tracking-widest py-2.5 rounded-sm text-center shadow transition-all cursor-pointer"
+                    >
+                      ⚡ Instant Bypass to Demo Session
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 text-[11px] font-semibold rounded-sm leading-relaxed bg-red-50 border border-red-150 text-red-600 uppercase">
+                  {error}
+                </div>
+              )
+            )}
 
             <button 
               type="submit"
