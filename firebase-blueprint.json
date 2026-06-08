@@ -74,6 +74,27 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["chatId", "sender", "senderId", "text", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "Store alerts, activity notifications, or promotional highlights",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "category": { "type": "string", "enum": ["promos", "activities", "orders"] },
+        "title": { "type": "string" },
+        "desc": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "unread": { "type": "boolean" },
+        "bannerTitle": { "type": "string" },
+        "bannerSub": { "type": "string" },
+        "discount": { "type": "string" },
+        "tag": { "type": "string" },
+        "points": { "type": "string" },
+        "status": { "type": "string" },
+        "orderId": { "type": "string" }
+      },
+      "required": ["category", "title", "desc", "createdAt"]
     }
   },
   "firestore": {
@@ -96,6 +117,10 @@
     "/chats/{chatId}/messages/{messageId}": {
       "schema": "ChatMessage",
       "description": "Subcollection of chat channel messages"
+    },
+    "/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "Global real-time notifications created by administrators"
     }
   }
 }

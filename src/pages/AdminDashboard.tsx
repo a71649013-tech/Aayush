@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Product, CartItem } from '../types';
-import { Package, ShoppingCart, TrendingUp, Users, Edit3, Trash2, CheckCircle, Clock, ShieldAlert, Zap, Plus, Upload, X } from 'lucide-react';
+import { Package, ShoppingCart, TrendingUp, Users, Edit3, Trash2, CheckCircle, Clock, ShieldAlert, Zap, Plus, Upload, X, MessageSquare, Bell, Send, User as UserIcon } from 'lucide-react';
 import { formatCurrency, cn } from '../lib/utils';
 import { orderService } from '../services/orderService';
 import { productService } from '../services/productService';
 import { useFirebase } from '../context/FirebaseContext';
 import { ProductImage } from '../components/ProductImage';
+import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, setDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 const compressImage = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -105,7 +107,7 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
   onDeleteProduct: (id: string) => void
 }) {
   const { user, loading } = useFirebase();
-  const [activeTab, setActiveTab] = useState<'orders' | 'products'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'messages'>('orders');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [orders, setOrders] = useState<any[]>([]);
@@ -122,6 +124,35 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
   });
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
 
+  // Real-time Support Chat & Notification Broadcast State
+  const [chatThreads, setChatThreads] = useState<any[]>([]);
+  const [selectedThread, setSelectedThread] = useState<any | null>(null);
+  const [threadMessages, setThreadMessages] = useState<any[]>([]);
+  const [replyText, setReplyText] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  // Broadcaster State
+  const [broadcastCategory, setBroadcastCategory] = useState<'promos' | 'activities' | 'orders'>('promos');
+  const [broadcastTitle, setBroadcastTitle] = useState('');
+  const [broadcastDesc, setBroadcastDesc] = useState('');
+  
+  // Promo-specific fields
+  const [promoBannerTitle, setPromoBannerTitle] = useState('6.6 FLASH DEAL');
+  const [promoBannerSub, setPromoBannerSub] = useState('SPECIAL PRICE REDUCTION');
+  const [promoDiscount, setPromoDiscount] = useState('30% OFF EVERYTHING');
+  const [promoTag, setPromoTag] = useState('Store Special');
+
+  // Activity-specific fields
+  const [activityPoints, setActivityPoints] = useState('+100 Gems');
+
+  // Order-specific fields
+  const [orderIdField, setOrderIdField] = useState('NM-5521');
+  const [orderStatusField, setOrderStatusField] = useState('Dispatched');
+
+  const [broadcastSuccess, setBroadcastSuccess] = useState(false);
+  const [broadcastError, setBroadcastError] = useState<string | null>(null);
+
+  // Subscribe to recent orders if admin
   useEffect(() => {
     if (user?.role === 'admin') {
       const unsubscribe = orderService.subscribeToAllOrders((fetched) => {
@@ -130,6 +161,144 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
       return () => unsubscribe();
     }
   }, [user]);
+
+  // Subscribe to all customer chat channels in real-time
+  useEffect(() => {
+    if (user?.role !== 'admin') return;
+
+    const q = query(collection(db, 'chats'), orderBy('updatedAt', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const threads = snapshot.docs.map(doc => {
+        const data = doc.data();
+        let timeStr = 'Just now';
+        if (data.updatedAt) {
+          const date = data.updatedAt.toDate ? data.updatedAt.toDate() : new Date(data.updatedAt);
+          timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' ' + date.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
+        }
+        return {
+          id: doc.id,
+          ...data,
+          time: timeStr
+        };
+      });
+      setChatThreads(threads);
+    }, (err) => {
+      console.error("Failed to load chat channels:", err);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  // Subscribe to selected chat thread's history in real-time
+  useEffect(() => {
+    if (!selectedThread) return;
+
+    const messagesRef = collection(db, 'chats', selectedThread.id, 'messages');
+    const q = query(messagesRef, orderBy('createdAt', 'asc'));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const msgs = snapshot.docs.map(doc => {
+        const data = doc.data();
+        let timeStr = 'Just now';
+        if (data.createdAt) {
+          const date = data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt);
+          timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+        return {
+          id: doc.id,
+          sender: data.sender || 'user',
+          text: data.text || '',
+          time: timeStr
+        };
+      });
+      setThreadMessages(msgs);
+      
+      // Mark as read by admin when looking at it
+      if (selectedThread.unreadByAdmin) {
+        setDoc(doc(db, 'chats', selectedThread.id), { unreadByAdmin: false }, { merge: true })
+          .catch(err => console.error("Could not sweep unread indicator:", err));
+      }
+
+      // Auto-scroll to latest message
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+
+    }, (err) => {
+      console.error("Failed to subscribe to individual thread messages:", err);
+    });
+
+    return () => unsubscribe();
+  }, [selectedThread?.id]);
+
+  const handleSendBroadcast = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!broadcastTitle.trim() || !broadcastDesc.trim()) return;
+
+    try {
+      setBroadcastSuccess(false);
+      setBroadcastError(null);
+
+      const payload: any = {
+        category: broadcastCategory,
+        title: broadcastTitle.trim(),
+        desc: broadcastDesc.trim(),
+        createdAt: serverTimestamp(),
+        unread: true
+      };
+
+      if (broadcastCategory === 'promos') {
+        payload.bannerTitle = promoBannerTitle.trim();
+        payload.bannerSub = promoBannerSub.trim();
+        payload.discount = promoDiscount.trim();
+        payload.tag = promoTag.trim();
+      } else if (broadcastCategory === 'activities') {
+        payload.points = activityPoints.trim();
+      } else if (broadcastCategory === 'orders') {
+        payload.orderId = orderIdField.trim();
+        payload.status = orderStatusField;
+      }
+
+      await addDoc(collection(db, 'notifications'), payload);
+      setBroadcastSuccess(true);
+      setBroadcastTitle('');
+      setBroadcastDesc('');
+      
+      // Auto dismiss success toast
+      setTimeout(() => setBroadcastSuccess(false), 3000);
+    } catch (err: any) {
+      console.error("Failed to post broadcast notification:", err);
+      setBroadcastError(err?.message || "Failed to post broadcast.");
+    }
+  };
+
+  const handleSendReply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!replyText.trim() || !selectedThread) return;
+
+    const typedValue = replyText.trim();
+    setReplyText('');
+
+    try {
+      // Save message in subcollection
+      await addDoc(collection(db, 'chats', selectedThread.id, 'messages'), {
+        sender: 'merchant',
+        text: typedValue,
+        createdAt: serverTimestamp()
+      });
+
+      // Update parent metadata to reflect last response from admin
+      await setDoc(doc(db, 'chats', selectedThread.id), {
+        lastMessage: typedValue,
+        updatedAt: serverTimestamp(),
+        unreadByAdmin: false,
+        unreadByUser: true
+      }, { merge: true });
+
+    } catch (err) {
+      console.error("Failed to send admin reply:", err);
+    }
+  };
 
   if (loading) return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
 
@@ -344,6 +513,15 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
             >
               Product Management
             </button>
+            <button 
+              onClick={() => setActiveTab('messages')}
+              className={cn(
+                "px-8 py-4 text-xs font-bold uppercase tracking-widest transition-all border-b-2",
+                activeTab === 'messages' ? "border-daraz-orange text-daraz-orange" : "border-transparent text-neutral-400 hover:text-neutral-600"
+              )}
+            >
+              Messages & Broadcasts
+            </button>
           </div>
 
           <div className="p-6">
@@ -400,7 +578,7 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
                   </tbody>
                 </table>
               </div>
-            ) : (
+            ) : activeTab === 'products' ? (
               <div className="space-y-6">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-sm font-bold uppercase tracking-tight italic">Inventory Overview</h3>
@@ -427,7 +605,7 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
                     {products.map((product) => (
                       <tr key={product.id} className="border-b border-neutral-50">
                         <td className="px-4 py-3 border-r border-neutral-50 w-16">
-                          <ProductImage src={product.image} alt="" category={product.category} className="w-10 h-10 object-cover rounded-sm" />
+                           <ProductImage src={product.image} alt="" category={product.category} className="w-10 h-10 object-cover rounded-sm" />
                         </td>
                         <td className="px-4 py-3 font-bold">{product.name}</td>
                         <td className="px-4 py-3 text-daraz-orange font-bold">{formatCurrency(product.price)}</td>
@@ -462,6 +640,268 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
                     ))}
                   </tbody>
                 </table>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 text-left">
+                {/* Notification Broadcaster */}
+                <div className="lg:col-span-5 bg-neutral-50 p-6 rounded-sm border border-neutral-100 flex flex-col space-y-6">
+                  <div className="flex items-center gap-2 pb-2 border-b border-neutral-200">
+                    <Bell className="text-daraz-orange" size={20} />
+                    <h3 className="text-sm font-black uppercase tracking-tight">Admin Notify Broadcaster</h3>
+                  </div>
+
+                  {broadcastSuccess && (
+                    <div className="bg-green-50 border border-green-200 text-green-700 p-3 text-[11px] font-bold rounded-sm animate-pulse">
+                      ✓ Broadcast sent successfully to shoppers in real-time!
+                    </div>
+                  )}
+                  {broadcastError && (
+                    <div className="bg-red-50 border border-red-200 text-red-600 p-3 text-[11px] font-bold rounded-sm">
+                      Error: {broadcastError}
+                    </div>
+                  )}
+
+                  <form onSubmit={handleSendBroadcast} className="space-y-4">
+                    <div>
+                      <label className="text-[9px] font-bold uppercase text-neutral-400">Broadcast Channel / Category</label>
+                      <select 
+                        className="w-full bg-white border border-neutral-200 p-2.5 text-xs font-bold uppercase tracking-wider outline-none focus:border-daraz-orange mt-1"
+                        value={broadcastCategory}
+                        onChange={(e: any) => setBroadcastCategory(e.target.value)}
+                      >
+                        <option value="promos">Promotional Alert (Promos)</option>
+                        <option value="activities">Daily Activity Award (Activities)</option>
+                        <option value="orders">Logistics Alerts / Order Updates (Orders)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-[9px] font-bold uppercase text-neutral-400">Notification Title</label>
+                      <input 
+                        required
+                        type="text"
+                        placeholder="e.g. Kathmandu Midnight Sale is LIVE!"
+                        className="w-full bg-white border border-neutral-200 p-2 text-xs outline-none focus:border-daraz-orange mt-1"
+                        value={broadcastTitle}
+                        onChange={e => setBroadcastTitle(e.target.value)}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[9px] font-bold uppercase text-neutral-400">Description Message</label>
+                      <textarea 
+                        required
+                        placeholder="Type standard notification alert detail text here..."
+                        className="w-full bg-white border border-neutral-200 p-2 text-xs outline-none focus:border-daraz-orange mt-1 h-20 resize-none"
+                        value={broadcastDesc}
+                        onChange={e => setBroadcastDesc(e.target.value)}
+                      />
+                    </div>
+
+                    {broadcastCategory === 'promos' && (
+                      <div className="space-y-3 p-3 bg-white border border-neutral-200 rounded-sm">
+                        <p className="text-[8px] font-black text-daraz-orange uppercase tracking-widest border-b border-neutral-100 pb-1">Promotional Banner Extra Details</p>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-[8px] font-bold uppercase text-neutral-400">Banner Title</label>
+                            <input 
+                              type="text" className="w-full bg-neutral-50 p-1.5 text-[10px] outline-none border border-neutral-100"
+                              value={promoBannerTitle} onChange={e => setPromoBannerTitle(e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[8px] font-bold uppercase text-neutral-400">Banner Subtitle</label>
+                            <input 
+                              type="text" className="w-full bg-neutral-50 p-1.5 text-[10px] outline-none border border-neutral-100"
+                              value={promoBannerSub} onChange={e => setPromoBannerSub(e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[8px] font-bold uppercase text-neutral-400">Discount Label</label>
+                            <input 
+                              type="text" className="w-full bg-neutral-50 p-1.5 text-[10px] outline-none border border-neutral-100"
+                              value={promoDiscount} onChange={e => setPromoDiscount(e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[8px] font-bold uppercase text-neutral-400">Badge Tag</label>
+                            <input 
+                              type="text" className="w-full bg-neutral-50 p-1.5 text-[10px] outline-none border border-neutral-100"
+                              value={promoTag} onChange={e => setPromoTag(e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {broadcastCategory === 'activities' && (
+                      <div className="space-y-2 p-3 bg-white border border-neutral-200 rounded-sm">
+                        <p className="text-[8px] font-black text-daraz-orange uppercase tracking-widest">Activity Reward Coins</p>
+                        <div>
+                          <label className="text-[8px] font-bold uppercase text-neutral-400">Gems/Points Reward String</label>
+                          <input 
+                            type="text" placeholder="e.g. +200 Gems" className="w-full bg-neutral-50 p-1.5 text-[10px] outline-none border border-neutral-100 mt-1"
+                            value={activityPoints} onChange={e => setActivityPoints(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {broadcastCategory === 'orders' && (
+                      <div className="space-y-3 p-3 bg-white border border-neutral-200 rounded-sm">
+                        <p className="text-[8px] font-black text-daraz-orange uppercase tracking-widest border-b border-neutral-100 pb-1">Logistics / Order Tracking Details</p>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-[8px] font-bold uppercase text-neutral-400">Order ID Key</label>
+                            <input 
+                              type="text" className="w-full bg-neutral-50 p-1.5 text-[10px] outline-none border border-neutral-100"
+                              value={orderIdField} onChange={e => setOrderIdField(e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[8px] font-bold uppercase text-neutral-400">Logistics Status</label>
+                            <select 
+                              className="w-full bg-neutral-50 p-1 text-[10px] outline-none border"
+                              value={orderStatusField} onChange={e => setOrderStatusField(e.target.value)}
+                            >
+                              <option value="In Transit">In Transit</option>
+                              <option value="Shipped">Shipped</option>
+                              <option value="Delivered">Delivered</option>
+                              <option value="Cancelled">Cancelled</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <button 
+                      type="submit"
+                      className="w-full bg-daraz-orange text-white py-3 text-[10px] font-bold uppercase tracking-widest hover:opacity-95 transition-opacity rounded-sm shadow-sm flex items-center justify-center gap-2"
+                    >
+                      <Bell size={12} /> Send Broadcast Notification
+                    </button>
+                  </form>
+                </div>
+
+                {/* Live Customer Chat Support Console */}
+                <div className="lg:col-span-7 bg-white p-6 rounded-sm border border-neutral-100 flex flex-col h-[520px]">
+                  <div className="flex items-center gap-2 pb-4 border-b border-neutral-100">
+                    <MessageSquare className="text-blue-600" size={20} />
+                    <div>
+                      <h3 className="text-sm font-black uppercase tracking-tight">Live Customer Support</h3>
+                      <p className="text-[9px] font-medium text-neutral-400 uppercase">Real-time interactions engine</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-4 flex-1 overflow-hidden pt-4 h-full">
+                    {/* User threads side index */}
+                    <div className="md:col-span-5 border-r border-neutral-100 pr-2 overflow-y-auto space-y-2 h-full max-h-[380px]">
+                      <p className="text-[9px] font-black uppercase text-neutral-400 tracking-wider pb-1">Subscribers / Active Chats</p>
+                      {chatThreads.length === 0 ? (
+                        <div className="text-center py-8 text-neutral-400 text-[10px] font-medium">No live chats yet.</div>
+                      ) : (
+                        chatThreads.map((thread) => (
+                          <button
+                            key={thread.id}
+                            onClick={() => setSelectedThread(thread)}
+                            className={cn(
+                              "w-full text-left p-2.5 rounded-sm flex flex-col space-y-1 transition-colors border",
+                              selectedThread?.id === thread.id
+                                ? "bg-blue-50/75 border-blue-200"
+                                : "hover:bg-neutral-50 border-neutral-100"
+                            )}
+                          >
+                            <div className="flex justify-between items-center w-full">
+                              <span className="font-bold text-[11px] text-neutral-800 truncate max-w-[100px]">
+                                {thread.userName}
+                              </span>
+                              {thread.unreadByAdmin && (
+                                <span className="w-2 h-2 rounded-full bg-daraz-orange shrink-0" title="Unread inquiry" />
+                              )}
+                            </div>
+                            <span className="text-[8px] text-neutral-400 uppercase font-bold tracking-tight">Inquiry Channel: {thread.senderName || 'General Support'}</span>
+                            <span className="text-[10px] font-medium text-neutral-500 truncate max-w-[160px] block italic">
+                              "{thread.lastMessage}"
+                            </span>
+                            <span className="text-[8px] text-neutral-400 block pt-1 text-right">{thread.time}</span>
+                          </button>
+                        ))
+                      )}
+                    </div>
+
+                    {/* Chat messaging display box */}
+                    <div className="md:col-span-7 flex flex-col h-full bg-neutral-50 rounded-sm p-4 border border-neutral-100 overflow-hidden max-h-[380px]">
+                      {selectedThread ? (
+                        <>
+                          {/* Thread Profile Header */}
+                          <div className="border-b border-neutral-200 pb-2 mb-2 flex items-center justify-between shrink-0">
+                            <div>
+                              <p className="font-bold text-xs text-neutral-800">{selectedThread.userName}</p>
+                              <p className="text-[9px] text-neutral-400">{selectedThread.userEmail}</p>
+                            </div>
+                            <span className="text-[9px] font-black uppercase tracking-tight text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">
+                              Active inquiry
+                            </span>
+                          </div>
+
+                          {/* Message bubble track */}
+                          <div className="flex-1 overflow-y-auto space-y-2 pr-1 mb-3 scrollbar-none">
+                            {threadMessages.length === 0 ? (
+                              <div className="text-center py-12 text-neutral-400 text-[10px] font-medium">Opening conversation stream...</div>
+                            ) : (
+                              threadMessages.map((msg) => (
+                                <div 
+                                  key={msg.id}
+                                  className={cn(
+                                    "flex flex-col space-y-0.5 max-w-[85%] rounded-sm p-2 text-[11px] line-clamp-none",
+                                    msg.sender === 'merchant'
+                                      ? "bg-daraz-orange text-white ml-auto"
+                                      : "bg-white text-neutral-800 mr-auto border border-neutral-100"
+                                  )}
+                                >
+                                  <p className="font-normal leading-relaxed break-words">{msg.text}</p>
+                                  <span className={cn(
+                                    "text-[7px] text-right block font-bold uppercase tracking-tight",
+                                    msg.sender === 'merchant' ? "text-orange-100" : "text-neutral-400"
+                                  )}>
+                                    {msg.time}
+                                  </span>
+                                </div>
+                              ))
+                            )}
+                            <div ref={messagesEndRef} />
+                          </div>
+
+                          {/* Reply input tray */}
+                          <form onSubmit={handleSendReply} className="flex gap-2 border-t border-neutral-200 pt-2 shrink-0">
+                            <input 
+                              required
+                              type="text"
+                              value={replyText}
+                              onChange={e => setReplyText(e.target.value)}
+                              placeholder={`Reply to ${selectedThread.userName}...`}
+                              className="flex-1 bg-white border border-neutral-250 text-[11px] p-2 outline-none focus:border-daraz-orange rounded-sm"
+                            />
+                            <button 
+                              type="submit"
+                              className="bg-blue-600 hover:bg-blue-700 text-white p-2 text-xs font-bold rounded-sm shrink-0 flex items-center justify-center min-w-[36px]"
+                            >
+                              <Send size={12} />
+                            </button>
+                          </form>
+                        </>
+                      ) : (
+                        <div className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-3">
+                          <div className="p-4 bg-white rounded-full border shadow-sm text-neutral-400"><MessageSquare size={32} /></div>
+                          <div>
+                            <p className="font-black text-xs text-neutral-700 uppercase tracking-wider">No selected conversation</p>
+                            <p className="text-[10px] text-neutral-400 max-w-[200px] mx-auto mt-1">Select an active customer chat thread from the left hand side index list to load live chat histories and start responding instantly.</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

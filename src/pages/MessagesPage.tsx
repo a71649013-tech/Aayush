@@ -27,7 +27,8 @@ import {
   doc, 
   getDocs, 
   deleteDoc, 
-  limit 
+  limit,
+  setDoc
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
@@ -209,6 +210,149 @@ export default function MessagesPage() {
     };
   }, [currentUserId]);
 
+  // Subscribe to live administrator broadcasts in real-time
+  useEffect(() => {
+    const q = query(collection(db, 'notifications'), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      if (snapshot.empty) return;
+
+      const dbNotifications = snapshot.docs.map(doc => {
+        const data = doc.data();
+        let dateStr = 'Just now';
+        
+        if (data.createdAt) {
+          const date = data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt);
+          dateStr = date.toLocaleDateString([], { day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
+        
+        return {
+          id: doc.id,
+          category: data.category || 'promos',
+          title: data.title || '',
+          desc: data.desc || '',
+          date: dateStr,
+          unread: data.unread !== undefined ? data.unread : true,
+          // promos fields
+          bannerTitle: data.bannerTitle || 'ANNOUNCEMENT',
+          bannerSub: data.bannerSub || 'SPECIAL UPDATES FROM ADMIN',
+          discount: data.discount || 'LIMITED VOUCHERS',
+          tag: data.tag || 'Mart Broadcast',
+          // activities fields
+          points: data.points || null,
+          // orders fields
+          status: data.status || 'Dispatched',
+          orderId: data.orderId || 'NM-ADMIN'
+        };
+      });
+
+      // Filter/Prepend dynamically by category
+      const livePromos = dbNotifications.filter(n => n.category === 'promos').map(p => ({
+        id: p.id,
+        title: p.title,
+        date: p.date,
+        unread: p.unread,
+        bannerTitle: p.bannerTitle,
+        bannerSub: p.bannerSub,
+        discount: p.discount,
+        desc: p.desc,
+        tag: p.tag
+      }));
+
+      const liveOrders = dbNotifications.filter(n => n.category === 'orders').map(o => ({
+        id: o.id,
+        title: o.title,
+        desc: o.desc,
+        time: o.date,
+        unread: o.unread,
+        status: o.status,
+        orderId: o.orderId
+      }));
+
+      const liveActivities = dbNotifications.filter(n => n.category === 'activities').map(a => ({
+        id: a.id,
+        title: a.title,
+        desc: a.desc,
+        time: a.date,
+        unread: a.unread,
+        points: a.points
+      }));
+
+      // Merge with default initial static arrays beautifully
+      const defaultPromos = [
+        {
+          id: 'promo-1',
+          title: 'The wait is over—it\'s finally here! 🎉🔥',
+          date: '06/06/2026',
+          unread: true,
+          bannerTitle: '6.6 MID YEAR SHOPPING FEST',
+          bannerSub: 'PLAY GEMS TREASURE CHEST & WIN FREE GIFTS DAILY',
+          discount: 'EXTRA 60% OFF',
+          desc: 'SHOP NOW with 60% OFF and win free gifts on gems channel. 🔥',
+          tag: 'Gems Channel Special'
+        },
+        {
+          id: 'promo-2',
+          title: 'Something exciting is coming your way 👀🔥 .',
+          date: '05/06/2026',
+          unread: true,
+          bannerTitle: '6.6 MID YEAR SHOPPING FEST',
+          bannerSub: 'PLAY GEMS TREASURE CHEST & WIN FREE GIFTS DAILY',
+          discount: 'EXTRA 60% OFF',
+          desc: 'SHOP with 60% OFF and win free gifts from 6th June on Gems channel. 🔥',
+          tag: 'Mid-Year Fest'
+        }
+      ];
+
+      const defaultOrders = [
+        {
+          id: 'ord-1',
+          title: 'Package Arrived at Kathmandu Sorting Center 📦',
+          desc: 'Your order containing Premium Himalayan Orthodox Tea has arrived at the central Nepal hub and is being routed.',
+          time: '07/06/2026',
+          unread: true,
+          status: 'In Transit',
+          orderId: 'NM-99231'
+        },
+        {
+          id: 'ord-2',
+          title: 'Order Dispatched from Patan Warehouse 🚚',
+          desc: 'Handcrafted Brass Butter Lamp package has been handed over to Daraz Express delivery courier headed to Pokhara.',
+          time: '04/06/2026',
+          unread: true,
+          status: 'Shipped',
+          orderId: 'NM-99182'
+        }
+      ];
+
+      const defaultActivities = [
+        {
+          id: 'act-1',
+          title: 'Check-in Streak Active! 🔥',
+          desc: 'You have checked in 3 days in a row. Complete tomorrow to unlock the 15% off voucher.',
+          time: '06/06/2026',
+          unread: true,
+          points: '+50 Gems'
+        },
+        {
+          id: 'act-2',
+          title: 'Security Notice',
+          desc: 'Your account was logged in from a new mobile device. If this wasn\'t you, please reset your password.',
+          time: '05/06/2026',
+          unread: false,
+          points: null
+        }
+      ];
+
+      setPromotions([...livePromos, ...defaultPromos.filter(d => !livePromos.some(lp => lp.title === d.title))]);
+      setOrders([...liveOrders, ...defaultOrders.filter(d => !liveOrders.some(lo => lo.title === d.title))]);
+      setActivities([...liveActivities, ...defaultActivities.filter(d => !liveActivities.some(la => la.title === d.title))]);
+    }, (error) => {
+      console.error("Firestore live read notifications error:", error);
+    });
+
+    return () => unsubscribe();
+  }, [currentUserId]);
+
   // Listen to active chat message stream in real-time
   useEffect(() => {
     if (!selectedChat) return;
@@ -280,42 +424,6 @@ export default function MessagesPage() {
     return () => unsubscribe();
   }, [selectedChat?.id, currentUserId]);
 
-  // Auto-replies mechanism
-  const triggerAutoReply = (chatId: string, userText: string) => {
-    setTimeout(async () => {
-      let replyText = "Thank you for writing to us in Nepali Mart! We will respond to you shortly.";
-      
-      const text = userText.toLowerCase();
-      if (chatId === 'nepali-mart-cs') {
-        if (text.includes('gem') || text.includes('voucher') || text.includes('claim')) {
-          replyText = "💰 You can claim free Gems daily in the 'GEMS' tab! Gems can be converted into vouchers for free delivery or discount on handicrafts and organic goods!";
-        } else if (text.includes('order') || text.includes('track') || text.includes('delivery')) {
-          replyText = "🚚 Your order status is being tracked. Check the 'Orders' notification hub or visit your Account Profile to view tracking codes!";
-        } else if (text.includes('nepal') || text.includes('kathmandu') || text.includes('pokhara')) {
-          replyText = "🇳🇵 Yes! We ship all over Nepal including Kathmandu, Pokhara, Lalitpur, Butwal, Biratnagar and Dharan swiftly!";
-        } else {
-          replyText = "Namaste 🙏 We have received your query about '" + userText + "'. A support executive will jump in shortly. In the meantime, you can claim free coupons in the Gems page!";
-        }
-      } else if (chatId === 'himalayan-handicrafts') {
-        replyText = "Namaste! Yes, our handmade brass items and pashminas are 100% authentic, hand-crafted by local artists in Lalitpur. We guarantee the premium quality! Let us know if you want custom details.";
-      } else if (chatId === 'organic-tea-farm') {
-        replyText = "Greetings from Ilam! 🍃 Our tea is sun-dried and organic. Fresh batches of Orthodox Green Tea and Golden Tips are packed safely. We ship directly to Kathmandu.";
-      }
-
-      try {
-        const chatDocId = `${chatId}-${currentUserId}`;
-        const messagesRef = collection(db, 'chats', chatDocId, 'messages');
-        await addDoc(messagesRef, {
-          sender: 'merchant',
-          text: replyText,
-          createdAt: serverTimestamp()
-        });
-      } catch (err) {
-        console.error("Error saving merchant auto-reply in Firestore:", err);
-      }
-    }, 1200);
-  };
-
   const handleSendMessage = async () => {
     if (!typedMessage.trim() || !selectedChat) return;
 
@@ -325,13 +433,29 @@ export default function MessagesPage() {
     try {
       const chatDocId = `${selectedChat.id}-${currentUserId}`;
       const messagesRef = collection(db, 'chats', chatDocId, 'messages');
+      
+      // Save client message to Firestore path subcollection
       await addDoc(messagesRef, {
         sender: 'user',
         text: textToSubmit,
         createdAt: serverTimestamp()
       });
 
-      triggerAutoReply(selectedChat.id, textToSubmit);
+      // Write master metadata to /chats/{chatDocId} so the administrator dashboard can list this user and chat in real-time
+      await setDoc(doc(db, 'chats', chatDocId), {
+        id: chatDocId,
+        userChatId: selectedChat.id,
+        userId: currentUserId,
+        userName: user?.name || 'Local Tester',
+        userEmail: user?.email || 'guest@nepalimart.com',
+        lastMessage: textToSubmit,
+        avatarColor: selectedChat.avatarColor,
+        senderName: selectedChat.senderName,
+        updatedAt: serverTimestamp(),
+        unreadByAdmin: true,
+        unreadByUser: false
+      }, { merge: true });
+
     } catch (err) {
       console.error("Error saving user message in Firestore:", err);
     }

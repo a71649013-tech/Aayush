@@ -119,5 +119,10 @@ service cloud.firestore {
         allow read, write: if true;
       }
     }
+
+    // Real-Time Global Notifications / Broadcasts
+    match /notifications/{notificationId} {
+      allow read, write: if true;
+    }
   }
 }

@@ -156,9 +156,11 @@ export default function ProfilePage({ user }: ProfilePageProps) {
 
             {/* User Identification name or email splits */}
             <div className="text-left">
+              <p className="mb-0.5 text-daraz-orange font-black text-[9px] tracking-widest uppercase">Loyal Member</p>
               <p className="text-lg font-black text-neutral-800 tracking-tight leading-none uppercase">
-                {user.email ? user.email.split('@')[0] : 'customer'}
+                {profileName}
               </p>
+              <p className="text-[10px] text-neutral-400 font-bold mt-1 lowercase">{user.email}</p>
               
               {/* Stats line: WishList • Followed Stores • Vouchers */}
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2 text-[11px] font-extrabold text-neutral-500 uppercase tracking-tight">
