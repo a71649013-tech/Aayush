@@ -21,10 +21,11 @@ service cloud.firestore {
 
     function isAdmin() {
       return isSignedIn() && (
-        getUserData().role == 'admin' ||
         request.auth.token.email == 'a71649013@gmail.com' ||
         request.auth.token.email == 'rudhrasha44@gmail.com' ||
-        request.auth.token.email == 'admin@nepalimart.com'
+        request.auth.token.email == 'admin@nepalimart.com' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', 'user') == 'admin')
       );
     }
 
