@@ -82,12 +82,74 @@ export default function ProfilePage({ user }: ProfilePageProps) {
     navigate('/');
   };
 
-  // Dynamically calculate matching order categories based on screenshot status bubbles
-  const toPayOrders = orders.filter(o => o.status === 'pending');
-  const toShipOrders = orders.filter(o => o.status === 'processing');
-  const toReceiveOrders = orders.filter(o => o.status === 'shipped' || o.status === 'delayed');
-  const toReviewOrders = orders.filter(o => o.status === 'delivered');
-  const returnedOrders = orders.filter(o => o.status === 'cancelled');
+  // Driver / Delivery boy live state simulation
+  const [driverProgress, setDriverProgress] = useState(30); // 0 to 100 along route
+  const [driverEta, setDriverEta] = useState(12); // minutes
+  const [driverDistance, setDriverDistance] = useState(2.3); // km
+  const [driverCoords, setDriverCoords] = useState({ lat: 27.6975, lng: 85.3284 }); // Kathmandu location
+  const [simulationActive, setSimulationActive] = useState(true);
+
+  // Live driver route driver interval updates simulating actual food/goods delivery tracking
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (selectedOrder && simulationActive) {
+      // Set random initial simulation offsets so it looks custom every time they open an order
+      setDriverProgress(prev => (prev >= 95 ? 15 : prev));
+      
+      timer = setInterval(() => {
+        setDriverProgress(prev => {
+          if (prev >= 100) {
+            return 100; // Arrived
+          }
+          const nextVal = Math.min(100, prev + 2);
+          
+          // Calculate dynamic remaining distance & ETA
+          const remainingDist = Math.max(0.1, parseFloat((3.8 * (1 - nextVal / 100)).toFixed(1)));
+          const remainingEta = Math.max(1, Math.round(18 * (1 - nextVal / 100)));
+          setDriverDistance(remainingDist);
+          setDriverEta(remainingEta);
+          
+          // Interpolate GPS coords from Kathmandu Hub towards Baneshwor Area
+          const startLat = 27.7025;
+          const startLng = 85.3201;
+          const endLat = 27.6915;
+          const endLng = 85.3422;
+          
+          const currentLat = startLat + (endLat - startLat) * (nextVal / 100);
+          const currentLng = startLng + (endLng - startLng) * (nextVal / 100);
+          setDriverCoords({ 
+            lat: parseFloat(currentLat.toFixed(4)), 
+            lng: parseFloat(currentLng.toFixed(4)) 
+          });
+          
+          return nextVal;
+        });
+      }, 4000);
+    }
+    return () => clearInterval(timer);
+  }, [selectedOrder, simulationActive]);
+
+  // Case-insensitive, robust status selector categories matches from screen
+  const toPayOrders = orders.filter(o => {
+    const s = (o.status || '').toLowerCase();
+    return s === 'pending' || s === 'unpaid';
+  });
+  const toShipOrders = orders.filter(o => {
+    const s = (o.status || '').toLowerCase();
+    return s === 'processing' || s === 'paid' || s === 'confirmed';
+  });
+  const toReceiveOrders = orders.filter(o => {
+    const s = (o.status || '').toLowerCase();
+    return s === 'shipped' || s === 'delayed' || s === 'in transit' || s === 'in-transit' || s === 'transit';
+  });
+  const toReviewOrders = orders.filter(o => {
+    const s = (o.status || '').toLowerCase();
+    return s === 'delivered' || s === 'completed';
+  });
+  const returnedOrders = orders.filter(o => {
+    const s = (o.status || '').toLowerCase();
+    return s === 'cancelled' || s === 'returned' || s === 'refunded';
+  });
 
   // Filter display orders matching select filter
   const getFilteredOrders = () => {
@@ -493,33 +555,248 @@ export default function ProfilePage({ user }: ProfilePageProps) {
             >
               <div className="p-4 space-y-4">
                 <div className="flex justify-between items-center border-b border-neutral-100 pb-2">
-                  <span className="text-xs font-black uppercase text-neutral-800">Tracking Logistic Record</span>
-                  <button onClick={() => setSelectedOrder(null)} className="text-neutral-400 hover:text-neutral-600"><X size={16} /></button>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-black uppercase text-neutral-800">Live Delivery Route Tracker</span>
+                    <span className="flex items-center gap-1 bg-green-50 text-green-700 border border-green-200 text-[8px] font-extrabold px-1.5 py-0.5 rounded-full uppercase leading-none">
+                      <span className="h-1.5 w-1.5 bg-green-500 rounded-full animate-ping shrink-0" />
+                      Live GPS
+                    </span>
+                  </div>
+                  <button onClick={() => setSelectedOrder(null)} className="text-neutral-400 hover:text-neutral-600 cursor-pointer"><X size={15} /></button>
                 </div>
 
+                {/* Progress Stepper */}
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-neutral-500">
-                    <Truck size={15} />
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-neutral-850">Order Logistics Progress</h4>
+                    <Truck id="truck-status-icon" size={14} />
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-neutral-850">Order Logistics Status</h4>
                   </div>
                   
-                  <div className="flex items-center justify-between px-2 relative py-4">
+                  <div className="flex items-center justify-between px-2 relative py-2">
                     <div className="absolute top-1/2 left-0 right-0 h-1 bg-neutral-200 -translate-y-1/2 rounded-full z-0" />
                     <div className="absolute top-1/2 left-0 h-1 bg-green-500 -translate-y-1/2 rounded-full z-1 transition-all" style={{ width: selectedOrder.status === 'delivered' ? '100%' : selectedOrder.status === 'shipped' ? '66%' : '33%' }} />
                     
                     {['Confirmed', 'Shipped', 'Delivered'].map((step, idx) => (
                       <div key={step} className="relative z-10 flex flex-col items-center">
-                        <div className={`w-3.5 h-3.5 rounded-full border-2 border-white flex items-center justify-center ${
+                        <div className={cn(
+                          "w-3.5 h-3.5 rounded-full border-2 border-white flex items-center justify-center transition-colors shadow-2xs",
                           (idx === 0) || 
                           (idx === 1 && (selectedOrder.status === 'shipped' || selectedOrder.status === 'delivered')) ||
                           (idx === 2 && selectedOrder.status === 'delivered')
-                          ? 'bg-green-500 text-white' : 'bg-neutral-300 text-neutral-500'
-                        }`} />
-                        <span className="text-[8px] font-black uppercase mt-1.5 text-neutral-500 tracking-tight">{step}</span>
+                            ? 'bg-green-500' : 'bg-neutral-300'
+                        )} />
+                        <span className="text-[8px] font-black uppercase mt-1 text-neutral-550 tracking-tight">{step}</span>
                       </div>
                     ))}
                   </div>
                 </div>
+
+                {/* Simulated Geolocation Map Area */}
+                <div className="bg-neutral-900 rounded-xl relative h-48 overflow-hidden border border-neutral-800 shadow-inner">
+                  {/* Grid overlay styling */}
+                  <div className="absolute inset-0 bg-[radial-gradient(#2c2d30_1px,transparent_1px)] [background-size:16px_16px] opacity-70 z-0" />
+                  
+                  {/* Simplified Vector Streets Layer (Road paths inside Kathmandu relative map box) */}
+                  <div className="absolute inset-0 z-0 text-neutral-700/30 text-[8px] font-mono select-none">
+                    {/* Horizontal Main Road - Tribhuvan Highway */}
+                    <div className="absolute top-1/3 left-0 right-0 h-5 bg-neutral-800/40 border-y border-neutral-700/20 flex items-center px-4 font-bold uppercase tracking-wider">
+                      Maitighar Expressway
+                    </div>
+                    {/* Vertical Link Road - Singha Durbar Marg */}
+                    <div className="absolute left-1/3 top-0 bottom-0 w-4 bg-neutral-800/40 border-x border-neutral-700/20 flex flex-col justify-center items-center font-bold uppercase tracking-wider text-center pt-8">
+                       S.D. Marg
+                    </div>
+                    {/* Banishwor crossing sector */}
+                    <div className="absolute top-[75%] left-[60%] text-[8px] text-neutral-500/55 font-black uppercase tracking-widest bg-neutral-950/20 px-1 py-0.5 rounded">
+                      New Baneshwor Crossing
+                    </div>
+                    {/* green parks */}
+                    <div className="absolute top-4 right-4 w-12 h-8 bg-emerald-950/20 border border-emerald-900/20 rounded-md flex items-center justify-center">
+                      🌿 Park
+                    </div>
+                  </div>
+
+                  {/* STARTING STATION (Kathmandu Warehouse Hub) */}
+                  <div className="absolute top-[28%] left-[8%] z-10 flex flex-col items-center">
+                    <div className="bg-daraz-orange text-white p-1 rounded border border-neutral-800 shadow-xs flex items-center justify-center text-[10px]">
+                      🏢
+                    </div>
+                    <span className="bg-neutral-950/70 border border-neutral-800 text-[7px] font-extrabold px-1 rounded text-white mt-1 uppercase tracking-tight">KTM Hub</span>
+                  </div>
+
+                  {/* DESTINATION (User home address marker pin) */}
+                  <div className="absolute top-[78%] right-[10%] z-10 flex flex-col items-center">
+                    <div className="bg-emerald-600 text-white p-1 rounded-full border border-neutral-800 shadow-xs flex items-center justify-center text-[11px] animate-bounce">
+                      🏠
+                    </div>
+                    <span className="bg-neutral-950/70 border border-emerald-900 text-[7px] font-extrabold px-1 rounded text-emerald-400 mt-1 uppercase tracking-tight">Your Home</span>
+                  </div>
+
+                  {/* Route progress connector path overlay */}
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none z-5">
+                    {/* Full path */}
+                    <path 
+                      d="M 50,65 L 140,65 L 140,165 L 340,165" 
+                      fill="none" 
+                      stroke="rgba(255, 255, 255, 0.15)" 
+                      strokeWidth="3.5" 
+                      strokeLinecap="round"
+                    />
+                    {/* Passed path in glowing color */}
+                    <path 
+                      id="glowing-route"
+                      d="M 50,65 L 140,65 L 140,165 L 340,165" 
+                      fill="none" 
+                      stroke="#f05625" 
+                      strokeWidth="3" 
+                      strokeDasharray="400"
+                      strokeDashoffset={400 - (400 * (driverProgress / 100))}
+                      strokeLinecap="round"
+                      className="transition-all duration-1000 ease-linear"
+                    />
+                  </svg>
+
+                  {/* DELIVER BOY MOVING SCOOTER MARKER */}
+                  {selectedOrder.status.toLowerCase() !== 'pending' && selectedOrder.status.toLowerCase() !== 'processing' ? (
+                    (() => {
+                      // Calculate marker top and left relative positions mathematically
+                      let markerLeft = "50px";
+                      let markerTop = "65px";
+
+                      if (driverProgress < 30) {
+                        // Segment 1 (Horizontal)
+                        const pct = driverProgress / 30;
+                        markerLeft = `${50 + (140 - 50) * pct}px`;
+                        markerTop = "52px";
+                      } else if (driverProgress < 60) {
+                        // Segment 2 (Vertical)
+                        const pct = (driverProgress - 30) / 30;
+                        markerLeft = "125px";
+                        markerTop = `${52 + (152 - 52) * pct}px`;
+                      } else {
+                        // Segment 3 (Horizontal Baneshwor)
+                        const pct = (driverProgress - 60) / 40;
+                        markerLeft = `${125 + (310 - 125) * pct}px`;
+                        markerTop = "152px";
+                      }
+
+                      return (
+                        <div 
+                          className="absolute z-10 transition-all duration-1000 ease-linear transform -translate-x-1/2 -translate-y-1/2 cursor-pointer group/rider"
+                          style={{ left: markerLeft, top: markerTop }}
+                        >
+                          {/* Pulsing radar circle */}
+                          <div className="absolute inset-0 rounded-full bg-daraz-orange/30 animate-ping -m-2" />
+                          <div className="bg-[#f05625] text-white h-7 w-7 rounded-full border-2 border-white flex items-center justify-center shadow-md font-bold text-sm">
+                            🛵
+                          </div>
+                          
+                          {/* Mini info bubble on hover */}
+                          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-neutral-950 border border-neutral-800 text-[7.5px] font-black text-white px-1.5 py-0.5 rounded shadow-lg whitespace-nowrap uppercase tracking-tight pointer-events-none opacity-90">
+                            Subash: {driverDistance} km away
+                          </div>
+                        </div>
+                      );
+                    })()
+                  ) : null}
+
+                  {/* Top bar GPS stats overview */}
+                  <div className="absolute top-2 left-2 right-2 flex justify-between items-center z-10">
+                    <div className="bg-neutral-950/80 border border-neutral-800 text-[8px] font-mono font-bold text-neutral-400 px-2 py-1 rounded">
+                      📡 LAT: {driverCoords.lat}°N | LNG: {driverCoords.lng}°E
+                    </div>
+                    <div className="bg-neutral-950/80 border border-neutral-800 text-[8.5px] text-green-400 font-extrabold px-2 py-1 rounded uppercase tracking-wider flex items-center gap-1">
+                      <span className="h-1 w-1 bg-green-500 rounded-full animate-pulse" />
+                      Live Feed
+                    </div>
+                  </div>
+
+                  {/* Route updates status text banner */}
+                  <div className="absolute bottom-2 left-2 right-2 bg-neutral-950/90 border border-neutral-800/80 p-1.5 rounded-lg z-10 flex items-center gap-2">
+                    <span className="text-sm">🗣️</span>
+                    <div className="text-[8.5px] font-bold text-neutral-200 uppercase tracking-tight leading-normal">
+                      {selectedOrder.status.toLowerCase() == 'pending' || selectedOrder.status.toLowerCase() == 'unpaid' ? (
+                        <span className="text-yellow-400">Awaiting Merchant Dispatch confirmation to start live tracking.</span>
+                      ) : selectedOrder.status.toLowerCase() == 'processing' || selectedOrder.status.toLowerCase() == 'paid' ? (
+                        <span className="text-amber-400">Package undergoing validation. Courier dispatcher is matching near KTM Hub.</span>
+                      ) : driverProgress >= 100 ? (
+                        <span className="text-emerald-400">Order successfully delivered close to Baneshwor address!</span>
+                      ) : driverProgress >= 80 ? (
+                        <span className="text-white animate-pulse">Entering neighborhood community street. Please prepare phone.</span>
+                      ) : (
+                        <span>Moving along Maitighar Crossing Road. Heading Eastward.</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Delivery Boy Contact Card */}
+                {selectedOrder.status.toLowerCase() !== 'pending' && selectedOrder.status.toLowerCase() !== 'processing' && selectedOrder.status.toLowerCase() !== 'paid' ? (
+                  <div className="bg-neutral-50 rounded-xl p-3 border border-neutral-150 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 text-left">
+                    <div className="flex items-center gap-3">
+                      {/* Driver Avatar Frame */}
+                      <div className="h-11 w-11 rounded-full bg-orange-100 border border-orange-200 flex items-center justify-center text-lg shadow-3xs relative">
+                        👨🏽‍✈️
+                        <div className="absolute bottom-0 right-0 h-2.5 w-2.5 bg-green-500 rounded-full border border-white" />
+                      </div>
+                      
+                      {/* Rider Bio */}
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-xs font-black text-neutral-800 leading-tight uppercase">Subash Tamang</p>
+                          <span className="bg-amber-50 border border-amber-200 text-amber-700 text-[7px] font-black uppercase px-1 rounded">⭐ 4.9</span>
+                        </div>
+                        <p className="text-[9.5px] font-extrabold text-neutral-400 uppercase tracking-tight mt-0.5">Bajaj Pulsar (Ba 2 Pa 5620)</p>
+                        <p className="text-[10px] font-bold text-[#f05625] tracking-wide mt-1 inline-flex items-center gap-1">
+                          📞 +977 981-3255901
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* ETA Counter Box right aligned */}
+                    <div className="flex items-center gap-2 md:self-stretch shrink-0">
+                      <div className="flex-1 bg-white border border-neutral-150 p-2 rounded text-center min-w-[70px]">
+                        <p className="text-[7.5px] font-black uppercase text-neutral-400 tracking-wider">Est. Arrival</p>
+                        <p className="text-xs font-black text-neutral-850 tracking-tight mt-0.5">{driverEta} Mins</p>
+                      </div>
+                      <div className="flex-1 bg-white border border-neutral-150 p-2 rounded text-center min-w-[70px]">
+                        <p className="text-[7.5px] font-black uppercase text-neutral-400 tracking-wider">Distance</p>
+                        <p className="text-xs font-black text-neutral-850 tracking-tight mt-0.5">{driverDistance} KM</p>
+                      </div>
+                    </div>
+
+                    {/* Quick call dial-out button */}
+                    <div className="flex gap-1.5 md:flex-col justify-end w-full md:w-auto">
+                      <button 
+                        onClick={() => {
+                          alert("📞 Dialing Subash Tamang directly: +977 981-3255901. Courier is currently driving.");
+                        }}
+                        className="flex-1 md:flex-initial bg-daraz-orange hover:bg-opacity-95 text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-2 rounded-sm text-center cursor-pointer transition-opacity"
+                      >
+                        Call Rider
+                      </button>
+                      <button 
+                        onClick={() => setSimulationActive(!simulationActive)}
+                        className={cn(
+                          "flex-1 md:flex-initial text-[9px] font-black uppercase tracking-wider px-2.5 py-2 rounded-sm text-center cursor-pointer border transition-colors",
+                          simulationActive ? "bg-white text-neutral-600 border-neutral-250 hover:bg-neutral-50" : "bg-green-600 border-green-700 text-white hover:bg-green-700"
+                        )}
+                      >
+                        {simulationActive ? 'Pause GPS' : 'Resume GPS'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-yellow-50/50 rounded-xl p-3 border border-yellow-200/50 flex items-center gap-3 text-left">
+                    <span className="text-xl">⏳</span>
+                    <div>
+                      <p className="text-[10px] font-black text-yellow-800 uppercase tracking-wide">Courier Allocation Pending</p>
+                      <p className="text-[9.5px] text-neutral-500 font-bold leading-normal">
+                        Once dispatch confirms the shipment of package #{selectedOrder.id.substring(0, 8).toUpperCase()}, a dedicated delivery agent and tracking telemetry will activate here!
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-2 bg-neutral-50 p-3 rounded">
                   <h4 className="text-[9.5px] font-black uppercase tracking-wider text-neutral-400">Recipient Details:</h4>
