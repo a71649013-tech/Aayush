@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, ShieldAlert, LogIn } from 'lucide-react';
+import { Mail, Lock, ArrowRight, ShieldAlert, LogIn, Sparkles } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { signInWithGoogle, loginWithEmail } from '../lib/firebase';
+import { signInWithGoogle, loginWithEmail, registerWithEmail } from '../lib/firebase';
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -12,6 +12,40 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const handleGuestLogin = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const email = 'customer@nepalimart.com';
+      const password = 'guest_nepalimart_2026';
+      
+      try {
+        await loginWithEmail(email, password);
+      } catch (err: any) {
+        if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+          // If the guest user doesn't exist, register them dynamically
+          try {
+            await registerWithEmail(email, password, 'Guest Customer');
+          } catch (signUpErr) {
+            console.warn("Guest account already existed or could not register, trying password sign-in again.");
+          }
+          await loginWithEmail(email, password);
+        } else if (err.code === 'auth/operation-not-allowed') {
+          setError('Email/Password credentials are not enabled in your Firebase Auth Console. Please enable them in your Firebase Authentication settings to support Guest Login.');
+          return;
+        } else {
+          throw err;
+        }
+      }
+      navigate('/');
+    } catch (err: any) {
+      console.error("Guest login registration/auth failed:", err);
+      setError(`Guest Login failed. Register a brand new free account using "Register Now" below!\nDetails: ${err.message || 'Please try again.'}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleGoogleLogin = async () => {
     try {
@@ -69,9 +103,26 @@ export default function LoginPage() {
 
           <div className="space-y-4">
             <button 
+              onClick={handleGuestLogin}
+              disabled={loading}
+              className="w-full bg-daraz-orange text-white py-3.5 rounded-sm font-black uppercase text-xs tracking-widest hover:bg-daraz-orange/95 disabled:opacity-50 transition-all flex items-center justify-center gap-2.5 shadow-[0_4px_12px_rgba(240,86,37,0.18)] cursor-pointer"
+            >
+              {loading ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <Sparkles size={16} className="text-amber-200" />
+              )}
+              ⚡ Quick Guest Sign-In
+            </button>
+
+            <p className="text-[9px] text-neutral-500 text-center font-extrabold uppercase tracking-widest leading-normal mb-8 max-w-[320px] mx-auto">
+              💡 Bypasses iframe / cookie partitioning errors instantly. Recommended for testing!
+            </p>
+
+            <button 
               onClick={handleGoogleLogin}
               disabled={loading}
-              className="w-full bg-neutral-900 text-white py-3 rounded-sm font-bold uppercase text-xs tracking-widest hover:opacity-90 disabled:opacity-50 transition-all flex items-center justify-center gap-3 mb-6"
+              className="w-full bg-neutral-900 text-white py-3 rounded-sm font-bold uppercase text-xs tracking-widest hover:opacity-90 disabled:opacity-50 transition-all flex items-center justify-center gap-3"
             >
               {loading ? (
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
