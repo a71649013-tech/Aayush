@@ -41,18 +41,6 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   useEffect(() => {
-    // If authenticated via PIN, lock that in immediately
-    if (localStorage.getItem('admin_pin_authenticated') === 'true') {
-      setUser({
-        id: 'pin-admin',
-        name: 'Store Admin',
-        email: 'admin@nepalimart.com',
-        role: 'admin'
-      });
-      setLoading(false);
-      return;
-    }
-
     let unsubUserDoc: (() => void) | null = null;
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (fbUser) => {
@@ -65,9 +53,7 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           unsubUserDoc = null;
         }
 
-        if (localStorage.getItem('admin_pin_authenticated') === 'true') {
-          return;
-        }
+        const isPinAuth = localStorage.getItem('admin_pin_authenticated') === 'true';
 
         if (fbUser) {
           const userDocRef = doc(db, 'users', fbUser.uid);
@@ -78,8 +64,12 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 const userData = userDoc.data() as User;
                 const isAdminEmail = fbUser.email === 'a71649013@gmail.com' || fbUser.email === 'rudhrasha44@gmail.com';
                 
-                if (isAdminEmail && userData.role !== 'admin') {
-                  const updatedUser = { ...userData, role: 'admin' as const };
+                if ((isAdminEmail || isPinAuth) && userData.role !== 'admin') {
+                  const updatedUser = { 
+                    ...userData, 
+                    role: 'admin' as const,
+                    id: fbUser.uid 
+                  };
                   await setDoc(userDocRef, updatedUser);
                   setUser(updatedUser);
                 } else {
@@ -89,7 +79,8 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                     lastClaimed: '',
                     vouchers: [],
                     ...userData,
-                    id: fbUser.uid
+                    id: fbUser.uid,
+                    role: (isAdminEmail || isPinAuth) ? 'admin' : userData.role
                   });
                 }
               } else {
@@ -98,7 +89,7 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                   id: fbUser.uid,
                   name: fbUser.displayName || 'User',
                   email: fbUser.email || '',
-                  role: isAdminEmail ? 'admin' : 'user',
+                  role: (isAdminEmail || isPinAuth) ? 'admin' : 'user',
                   gems: 0,
                   streak: 0,
                   lastClaimed: '',
@@ -116,7 +107,16 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             setLoading(false);
           });
         } else {
-          setUser(null);
+          if (isPinAuth) {
+            setUser({
+              id: 'pin-admin',
+              name: 'Store Admin',
+              email: 'admin@nepalimart.com',
+              role: 'admin'
+            });
+          } else {
+            setUser(null);
+          }
           setLoading(false);
         }
       } catch (error) {

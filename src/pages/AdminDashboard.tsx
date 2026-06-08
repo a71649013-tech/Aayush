@@ -110,6 +110,8 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [orders, setOrders] = useState<any[]>([]);
   const [compressing, setCompressing] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [newProduct, setNewProduct] = useState({
     name: '',
     price: 0,
@@ -144,23 +146,42 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
     );
   }
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    onAddProduct({
-      ...newProduct,
-      sellerId: user?.id || 'admin',
-      sellerName: user?.name || 'Administrator',
-      status: 'active'
-    });
-    setShowAddModal(false);
-    setNewProduct({
-      name: '',
-      price: 0,
-      category: 'Handicrafts',
-      stock: 50,
-      description: '',
-      image: ''
-    });
+    try {
+      setSubmitting(true);
+      setSubmitError(null);
+      await onAddProduct({
+        ...newProduct,
+        sellerId: user?.id || 'admin',
+        sellerName: user?.name || 'Administrator',
+        status: 'active'
+      });
+      setShowAddModal(false);
+      setNewProduct({
+        name: '',
+        price: 0,
+        category: 'Handicrafts',
+        stock: 50,
+        description: '',
+        image: ''
+      });
+    } catch (err: any) {
+      console.error("Save product error:", err);
+      let errorMsg = err?.message || 'Failed to list product. Please check your permissions and try again.';
+      try {
+        const parsed = JSON.parse(err.message);
+        if (parsed && parsed.error) {
+          errorMsg = `Firestore Error: ${parsed.error}`;
+          if (parsed.error.includes("permissions") || parsed.error.includes("Permission denied")) {
+            errorMsg = "Security Check: Missing or insufficient permissions. This normally occurs if you log in using only a PIN-code without Google Auth, which prevents secure writes to our Firestore Database. Please log in with your Google account first to securely authenticate, then open the admin dashboard.";
+          }
+        }
+      } catch (px) {}
+      setSubmitError(errorMsg);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean) => {
@@ -188,11 +209,30 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
     }
   };
 
-  const handleEdit = (e: React.FormEvent) => {
+  const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (editingProduct) {
-      onUpdateProduct(editingProduct.id, editingProduct);
-      setEditingProduct(null);
+      try {
+        setSubmitting(true);
+        setSubmitError(null);
+        await onUpdateProduct(editingProduct.id, editingProduct);
+        setEditingProduct(null);
+      } catch (err: any) {
+        console.error("Edit product error:", err);
+        let errorMsg = err?.message || 'Failed to update product.';
+        try {
+          const parsed = JSON.parse(err.message);
+          if (parsed && parsed.error) {
+            errorMsg = `Firestore Error: ${parsed.error}`;
+            if (parsed.error.includes("permissions") || parsed.error.includes("Permission denied")) {
+              errorMsg = "Security Check: Missing or insufficient permissions. This normally occurs if you log in using only a PIN-code without Google Auth, which prevents secure writes to our Firestore Database. Please log in with your Google account first to securely authenticate, then open the admin dashboard.";
+            }
+          }
+        } catch (px) {}
+        setSubmitError(errorMsg);
+      } finally {
+        setSubmitting(false);
+      }
     }
   };
 
@@ -434,6 +474,11 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 text-left">
           <div className="bg-white w-full max-w-lg rounded-sm shadow-2xl p-8">
             <h2 className="text-2xl font-black italic uppercase tracking-tighter text-blue-600 mb-6">Edit Listing</h2>
+            {submitError && (
+              <div className="bg-red-50 border border-red-200 text-red-600 p-3 text-xs font-bold rounded-sm mb-4 leading-relaxed">
+                {submitError}
+              </div>
+            )}
             <form onSubmit={handleEdit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
@@ -500,16 +545,25 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
               <div className="flex gap-4 pt-4">
                 <button 
                   type="button" 
+                  disabled={submitting}
                   onClick={() => setEditingProduct(null)}
-                  className="flex-1 py-3 border border-neutral-200 text-[10px] font-bold uppercase tracking-widest hover:bg-neutral-50"
+                  className="flex-1 py-3 border border-neutral-200 text-[10px] font-bold uppercase tracking-widest hover:bg-neutral-50 disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit" 
-                  className="flex-1 py-3 bg-blue-600 text-white text-[10px] font-bold uppercase tracking-widest hover:opacity-90"
+                  disabled={submitting}
+                  className="flex-1 py-3 bg-blue-600 text-white text-[10px] font-bold uppercase tracking-widest hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  Update Product
+                  {submitting ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Update Product'
+                  )}
                 </button>
               </div>
             </form>
@@ -522,6 +576,11 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6">
           <div className="bg-white w-full max-w-lg rounded-sm shadow-2xl p-8">
             <h2 className="text-2xl font-black italic uppercase tracking-tighter text-daraz-orange mb-6">Create New Listing</h2>
+            {submitError && (
+              <div className="bg-red-50 border border-red-200 text-red-600 p-3 text-xs font-bold rounded-sm mb-4 leading-relaxed">
+                {submitError}
+              </div>
+            )}
             <form onSubmit={handleAdd} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
@@ -597,16 +656,25 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
               <div className="flex gap-4 pt-4">
                 <button 
                   type="button" 
+                  disabled={submitting}
                   onClick={() => setShowAddModal(false)}
-                  className="flex-1 py-3 border border-neutral-200 text-[10px] font-bold uppercase tracking-widest hover:bg-neutral-50"
+                  className="flex-1 py-3 border border-neutral-200 text-[10px] font-bold uppercase tracking-widest hover:bg-neutral-50 disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit" 
-                  className="flex-1 py-3 bg-daraz-orange text-white text-[10px] font-bold uppercase tracking-widest hover:opacity-90"
+                  disabled={submitting}
+                  className="flex-1 py-3 bg-daraz-orange text-white text-[10px] font-bold uppercase tracking-widest hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  Save Product
+                  {submitting ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Product'
+                  )}
                 </button>
               </div>
             </form>
