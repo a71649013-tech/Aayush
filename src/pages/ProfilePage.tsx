@@ -89,6 +89,76 @@ export default function ProfilePage({ user }: ProfilePageProps) {
   const [driverCoords, setDriverCoords] = useState({ lat: 27.6975, lng: 85.3284 }); // Kathmandu location
   const [simulationActive, setSimulationActive] = useState(true);
 
+  const [chatLog, setChatLog] = useState<{sender: 'customer' | 'rider', text: string, time: string}[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
+
+  // Initialize chat logs with delivery boy intro block
+  useEffect(() => {
+    if (selectedOrder) {
+      const isPendingOrProcessing = selectedOrder.status.toLowerCase() === 'pending' || selectedOrder.status.toLowerCase() === 'processing' || selectedOrder.status.toLowerCase() === 'paid';
+      if (isPendingOrProcessing) {
+        setChatLog([
+          {
+            sender: 'rider',
+            text: `👋 Namaste! I am Subash, your courier partner. Your package is currently being verified at the merchant store. Once they hand over the parcel, I will start my engine and you can track me live!`,
+            time: 'Just now'
+          }
+        ]);
+        setIsTyping(false);
+      } else {
+        setChatLog([
+          {
+            sender: 'rider',
+            text: `👋 Namaste! Your delivery rider Subash Tamang here! I am actively on my way with your package. I am approximately ${driverDistance || 2.3} km away and approaching your custom pin on my Pulsar.`,
+            time: 'Just now'
+          }
+        ]);
+        setIsTyping(false);
+      }
+    } else {
+      setChatLog([]);
+      setIsTyping(false);
+    }
+  }, [selectedOrder]);
+
+  const handleAskRider = (questionKey: string) => {
+    if (isTyping) return;
+    
+    let questionText = '';
+    let responseText = '';
+    
+    switch (questionKey) {
+      case 'where':
+        questionText = "🎒 Where are you right now?";
+        responseText = `🏍️ I am on the way! Cruising on Tribhuvan Expressway past Maitighar. My current distance is ${driverDistance} km and my GPS ETA is ${driverEta} minutes from your doorstep!`;
+        break;
+      case 'safe':
+        questionText = "🛡️ Is my delivery safe?";
+        responseText = "🔒 Yes, absolutely safe! Your parcel is safely packed in inside the waterproof insulated courier box. No chance of any damage or wet stains.";
+        break;
+      case 'gate':
+        questionText = "🚪 Can you drop it at the entrance gate?";
+        responseText = "👍 Yes, absolutely! I will deposit it with the security guard at your gate or reception desk and call you with a confirmation.";
+        break;
+      case 'cod':
+        questionText = "💵 I have cash ready for COD payment.";
+        responseText = `💰 Perfect! The total to pay is रू ${selectedOrder ? selectedOrder.total.toLocaleString() : '0'}. I have change on hand, so you can pay with cash easily!`;
+        break;
+      default:
+        return;
+    }
+
+    // Append customer question
+    setChatLog(prev => [...prev, { sender: 'customer', text: questionText, time: 'Just now' }]);
+    setIsTyping(true);
+
+    // Simulate real rider typing feedback
+    setTimeout(() => {
+      setIsTyping(false);
+      setChatLog(prev => [...prev, { sender: 'rider', text: responseText, time: 'Just now' }]);
+    }, 1200);
+  };
+
   // Live driver route driver interval updates simulating actual food/goods delivery tracking
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -739,6 +809,96 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                       ) : (
                         <span>Moving along Maitighar Crossing Road. Heading Eastward.</span>
                       )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* INTERACTIVE RIDER CHAT CONSOLE */}
+                <div className="bg-neutral-50/50 border border-neutral-150 rounded-xl p-3 space-y-3">
+                  <div className="flex items-center justify-between border-b border-neutral-150 pb-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-base">💬</span>
+                      <p className="text-[10px] font-black uppercase text-neutral-800 tracking-wider">Rider Intercom Station</p>
+                    </div>
+                    <span className="flex items-center gap-1 bg-daraz-orange/10 text-daraz-orange text-[7px] font-black uppercase px-2 py-0.5 rounded-full">
+                      <span className="h-1.5 w-1.5 bg-daraz-orange rounded-full animate-ping" />
+                      Connected to Rider
+                    </span>
+                  </div>
+
+                  {/* Chat logs feed box */}
+                  <div className="bg-white rounded-lg border border-neutral-200 p-3 h-40 overflow-y-auto space-y-2.5 text-xs">
+                    {chatLog.map((chat, idx) => (
+                      <div 
+                        key={idx} 
+                        className={cn(
+                          "max-w-[85%] rounded-lg p-2.5 leading-relaxed text-left animate-fadeIn",
+                          chat.sender === 'rider' 
+                            ? "bg-neutral-100 text-neutral-850 rounded-tl-none mr-auto border border-neutral-200/60" 
+                            : "bg-daraz-orange text-white rounded-tr-none ml-auto"
+                        )}
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <span className="text-[7.5px] font-black uppercase tracking-tight opacity-75">
+                            {chat.sender === 'rider' ? '👨🏽‍✈️ Subash Tamang (Rider)' : '👤 You (Customer)'}
+                          </span>
+                          <span className="text-[7px] font-mono opacity-60 font-bold">{chat.time}</span>
+                        </div>
+                        <p className="text-[10px] font-semibold">{chat.text}</p>
+                      </div>
+                    ))}
+
+                    {/* Typing bubble simulated loader */}
+                    {isTyping && (
+                      <div className="bg-neutral-100 text-neutral-700 max-w-[50%] rounded-lg rounded-tl-none p-2 mr-auto flex items-center gap-1.5 border border-neutral-200/55 animate-pulse">
+                        <span className="text-[7.5px] font-black uppercase tracking-tight text-neutral-400">Subash is typing</span>
+                        <div className="flex gap-1 items-center">
+                          <span className="h-1.5 w-1.5 bg-neutral-400 rounded-full animate-bounce delay-0" />
+                          <span className="h-1.5 w-1.5 bg-neutral-400 rounded-full animate-bounce [animation-delay:0.2s]" />
+                          <span className="h-1.5 w-1.5 bg-neutral-400 rounded-full animate-bounce [animation-delay:0.4s]" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Quick Preset Taps Selector Panel */}
+                  <div className="space-y-1.5 text-left">
+                    <p className="text-[8px] font-black text-neutral-450 uppercase tracking-widest">
+                      Tap a message to send to rider Subash:
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleAskRider('where')}
+                        disabled={isTyping}
+                        className="bg-white hover:bg-neutral-100 text-neutral-700 text-[8.5px] font-bold px-2 py-1.5 rounded-sm border border-neutral-200 transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        🎒 Where are you now?
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleAskRider('safe')}
+                        disabled={isTyping}
+                        className="bg-white hover:bg-neutral-100 text-neutral-700 text-[8.5px] font-bold px-2 py-1.5 rounded-sm border border-neutral-200 transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        🛡️ Is package safe?
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleAskRider('gate')}
+                        disabled={isTyping}
+                        className="bg-white hover:bg-neutral-100 text-neutral-700 text-[8.5px] font-bold px-2 py-1.5 rounded-sm border border-neutral-200 transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        🚪 Drop at gate/guard
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleAskRider('cod')}
+                        disabled={isTyping}
+                        className="bg-white hover:bg-neutral-100 text-neutral-700 text-[8.5px] font-bold px-2 py-1.5 rounded-sm border border-neutral-200 transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        💵 I have exact cash
+                      </button>
                     </div>
                   </div>
                 </div>
