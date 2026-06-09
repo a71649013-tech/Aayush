@@ -79,6 +79,15 @@ export const productService = {
         // Auto-seed if the database is currently empty
         productService.seedIfEmpty(false);
       } else {
+        // Delete orphaned mart-product-* entries that are no longer in our local mock data
+        dbProducts.forEach(dbProduct => {
+          if (dbProduct.id.startsWith('mart-product-') && !MOCK_PRODUCTS.some(p => p.id === dbProduct.id)) {
+            deleteDoc(doc(db, COLLECTION_NAME, dbProduct.id)).catch(err => {
+              console.warn(`Failed to clean up orphaned db product ${dbProduct.id}:`, err);
+            });
+          }
+        });
+
         // Dynamic alignment of local mock products (including our new items and 5% pricing updates)
         MOCK_PRODUCTS.forEach(localMock => {
           const dbProduct = dbProducts.find(p => p.id === localMock.id);
