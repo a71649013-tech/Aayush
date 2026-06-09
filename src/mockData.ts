@@ -100,6 +100,50 @@ const RAW_PRODUCTS = [
     rating: 4.8,
     numReviews: 36,
     stock: 25
+  },
+  {
+    id: "mart-product-10",
+    name: "MEMO CX07 Magnetic Cooler Fan 15W Instant Heatdissipation Phone Cooler Semiconductor Heatsink Compatible with Mobile and Tab Cooling Fan for Gaming",
+    description: "Premium semiconductor magnetic phone cooler fan with 15W supreme rapid cooling capability. Features dynamic RGB backlighting and dual-mode silent cooling. Compact shape fits masterfully with major gaming phones and tablets for non-stop smooth frame rates.",
+    price: 1522.5,
+    category: "Electronic Devices",
+    image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=800",
+    rating: 4.6,
+    numReviews: 24,
+    stock: 50
+  },
+  {
+    id: "mart-product-11",
+    name: "Computer Set with Core i3 3rd Gen, 8GB DDR3 RAM, 256GB SSD, and 19-inch Monitor",
+    description: "Complete cost-effective desktop computer workstation bundle. Excellent for students and commercial offices. Features a standard Intel Core i3 3rd Gen processor, 8GB responsive hardware memory, 256GB high-speed SSD storage, paired with a gorgeous high-contrast 19-inch LED monitor, premium wired keyboard and optical mouse.",
+    price: 16275.0,
+    category: "Electronic Devices",
+    image: "https://images.unsplash.com/photo-1588508065123-287b28e013da?auto=format&fit=crop&q=80&w=800",
+    rating: 4.5,
+    numReviews: 18,
+    stock: 12
+  },
+  {
+    id: "mart-product-12",
+    name: "Mosquito Net Tent for Bed Large Folding Canopy Net Tent Portable Mattress Mosquito Netting for Indoor",
+    description: "Multi-functional convenient folding canopy net tent shelter. Formulated using double-filament extra-dense breathable hexagonal mesh. Offers 360-degree perfect shielding against insect bites. Super convenient setup with pop-up structural spring steel loop rings. Easy to fold flat, clean, and carry.",
+    price: 1470.0,
+    category: "Home & Lifestyle",
+    image: "https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?auto=format&fit=crop&q=80&w=800",
+    rating: 4.7,
+    numReviews: 40,
+    stock: 65
+  },
+  {
+    id: "mart-product-13",
+    name: "Professional Mini Hair Straightener – Titanium Flat Iron for Hair Styling & Straightening, Portable & High_Quality Hot Comb",
+    description: "Ultra-compact aesthetic mini flat iron designed with precision floating titanium-coated heating plates. Rehearses high-efficiency continuous styling and instant uniform heating up to 200°C. Perfect lightweight travel-sized design for touch-ups, short cuts, bangs, and smooth straight finishes anywhere.",
+    price: 787.5,
+    category: "Health & Beauty",
+    image: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&q=80&w=800",
+    rating: 4.4,
+    numReviews: 14,
+    stock: 45
   }
 ];
 
