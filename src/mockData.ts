@@ -89,6 +89,17 @@ const RAW_PRODUCTS = [
     rating: 4.7,
     numReviews: 12,
     stock: 80
+  },
+  {
+    id: "mart-product-9",
+    name: "E88 Pro With Dual Battery and 4K HD Camera",
+    description: "High-performance aerial photography quadcopter. Features dual 4K HD cameras with adjustable wide-angle views, headless mode, optical flow positioning, altitude hold, smart gravity sensing, and intuitive trajectory route flying. Comes with two rechargeable high-capacity batteries providing long-endurance flight time.",
+    price: 3412.5,
+    category: "Electronic Devices",
+    image: "https://images.unsplash.com/photo-1527977966376-1c8408f9f108?auto=format&fit=crop&q=80&w=800",
+    rating: 4.8,
+    numReviews: 36,
+    stock: 25
   }
 ];
 

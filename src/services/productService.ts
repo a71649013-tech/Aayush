@@ -78,6 +78,21 @@ export const productService = {
       if (snapshot.empty) {
         // Auto-seed if the database is currently empty
         productService.seedIfEmpty(false);
+      } else {
+        // Guard check to auto-seed the newly added E88 drone product directly to Firestore
+        const hasNewProduct = dbProducts.some(p => p.id === 'mart-product-9');
+        if (!hasNewProduct) {
+          const newProduct = MOCK_PRODUCTS.find(p => p.id === 'mart-product-9');
+          if (newProduct) {
+            const { id, ...data } = newProduct;
+            setDoc(doc(db, COLLECTION_NAME, id), {
+              ...data,
+              createdAt: serverTimestamp()
+            }).catch(err => {
+              console.warn('Failed to auto-seed custom drone to Firestore:', err);
+            });
+          }
+        }
       }
       
       callback(dbProducts);
