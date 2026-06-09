@@ -79,35 +79,30 @@ export const productService = {
         // Auto-seed if the database is currently empty
         productService.seedIfEmpty(false);
       } else {
-        // Guard check to auto-seed newly added custom products directly to Firestore or update their images
-        const newProductIds = [
-          'mart-product-9', 'mart-product-10', 'mart-product-11', 'mart-product-12', 'mart-product-13',
-          'mart-product-14', 'mart-product-15', 'mart-product-16', 'mart-product-17', 'mart-product-18',
-          'mart-product-19', 'mart-product-20', 'mart-product-21', 'mart-product-22', 'mart-product-23',
-          'mart-product-24', 'mart-product-25', 'mart-product-26', 'mart-product-27', 'mart-product-28',
-          'mart-product-29', 'mart-product-30'
-        ];
-        newProductIds.forEach(productId => {
-          const dbProduct = dbProducts.find(p => p.id === productId);
+        // Dynamic alignment of local mock products (including our new items and 5% pricing updates)
+        MOCK_PRODUCTS.forEach(localMock => {
+          const dbProduct = dbProducts.find(p => p.id === localMock.id);
           if (!dbProduct) {
-            const newProduct = MOCK_PRODUCTS.find(p => p.id === productId);
-            if (newProduct) {
-              const { id, ...data } = newProduct;
-              setDoc(doc(db, COLLECTION_NAME, id), {
-                ...data,
-                createdAt: serverTimestamp()
-              }).catch(err => {
-                console.warn(`Failed to auto-seed custom product ${productId} to Firestore:`, err);
-              });
-            }
+            // New product: Auto-seed missing product directly to Firestore
+            const { id, ...data } = localMock;
+            setDoc(doc(db, COLLECTION_NAME, id), {
+              ...data,
+              createdAt: serverTimestamp()
+            }).catch(err => {
+              console.warn(`Failed to auto-seed new product ${localMock.id} to Firestore:`, err);
+            });
           } else {
-            // Force update to use the newly generated high-fidelity beautiful photo asset
-            const localMock = MOCK_PRODUCTS.find(p => p.id === productId);
-            if (localMock && dbProduct.image !== localMock.image) {
-              updateDoc(doc(db, COLLECTION_NAME, productId), {
-                image: localMock.image
-              }).catch(err => {
-                console.warn(`Failed to update custom product ${productId} image in Firestore:`, err);
+            // Existing product: Ensure live database prices and images reflect local updates
+            const updates: any = {};
+            if (dbProduct.image !== localMock.image) {
+              updates.image = localMock.image;
+            }
+            if (dbProduct.price !== localMock.price) {
+              updates.price = localMock.price;
+            }
+            if (Object.keys(updates).length > 0) {
+              updateDoc(doc(db, COLLECTION_NAME, localMock.id), updates).catch(err => {
+                console.warn(`Failed to align database product ${localMock.id}:`, err);
               });
             }
           }
