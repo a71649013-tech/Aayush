@@ -79,11 +79,11 @@ export const productService = {
         // Auto-seed if the database is currently empty
         productService.seedIfEmpty(false);
       } else {
-        // Guard check to auto-seed newly added custom products directly to Firestore
+        // Guard check to auto-seed newly added custom products directly to Firestore or update their images
         const newProductIds = ['mart-product-9', 'mart-product-10', 'mart-product-11', 'mart-product-12', 'mart-product-13'];
         newProductIds.forEach(productId => {
-          const hasProduct = dbProducts.some(p => p.id === productId);
-          if (!hasProduct) {
+          const dbProduct = dbProducts.find(p => p.id === productId);
+          if (!dbProduct) {
             const newProduct = MOCK_PRODUCTS.find(p => p.id === productId);
             if (newProduct) {
               const { id, ...data } = newProduct;
@@ -92,6 +92,16 @@ export const productService = {
                 createdAt: serverTimestamp()
               }).catch(err => {
                 console.warn(`Failed to auto-seed custom product ${productId} to Firestore:`, err);
+              });
+            }
+          } else {
+            // Force update to use the newly generated high-fidelity beautiful photo asset
+            const localMock = MOCK_PRODUCTS.find(p => p.id === productId);
+            if (localMock && dbProduct.image !== localMock.image) {
+              updateDoc(doc(db, COLLECTION_NAME, productId), {
+                image: localMock.image
+              }).catch(err => {
+                console.warn(`Failed to update custom product ${productId} image in Firestore:`, err);
               });
             }
           }

@@ -96,7 +96,7 @@ const RAW_PRODUCTS = [
     description: "High-performance aerial photography quadcopter. Features dual 4K HD cameras with adjustable wide-angle views, headless mode, optical flow positioning, altitude hold, smart gravity sensing, and intuitive trajectory route flying. Comes with two rechargeable high-capacity batteries providing long-endurance flight time.",
     price: 3412.5,
     category: "Electronic Devices",
-    image: "https://images.unsplash.com/photo-1527977966376-1c8408f9f108?auto=format&fit=crop&q=80&w=800",
+    image: "/src/assets/images/e88_pro_drone_1780989935110.png",
     rating: 4.8,
     numReviews: 36,
     stock: 25
@@ -107,7 +107,7 @@ const RAW_PRODUCTS = [
     description: "Premium semiconductor magnetic phone cooler fan with 15W supreme rapid cooling capability. Features dynamic RGB backlighting and dual-mode silent cooling. Compact shape fits masterfully with major gaming phones and tablets for non-stop smooth frame rates.",
     price: 1522.5,
     category: "Electronic Devices",
-    image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=800",
+    image: "/src/assets/images/memo_cx07_cooler_1780989950082.png",
     rating: 4.6,
     numReviews: 24,
     stock: 50
@@ -118,7 +118,7 @@ const RAW_PRODUCTS = [
     description: "Complete cost-effective desktop computer workstation bundle. Excellent for students and commercial offices. Features a standard Intel Core i3 3rd Gen processor, 8GB responsive hardware memory, 256GB high-speed SSD storage, paired with a gorgeous high-contrast 19-inch LED monitor, premium wired keyboard and optical mouse.",
     price: 16275.0,
     category: "Electronic Devices",
-    image: "https://images.unsplash.com/photo-1588508065123-287b28e013da?auto=format&fit=crop&q=80&w=800",
+    image: "/src/assets/images/computer_set_i3_1780989966876.png",
     rating: 4.5,
     numReviews: 18,
     stock: 12
@@ -129,7 +129,7 @@ const RAW_PRODUCTS = [
     description: "Multi-functional convenient folding canopy net tent shelter. Formulated using double-filament extra-dense breathable hexagonal mesh. Offers 360-degree perfect shielding against insect bites. Super convenient setup with pop-up structural spring steel loop rings. Easy to fold flat, clean, and carry.",
     price: 1470.0,
     category: "Home & Lifestyle",
-    image: "https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?auto=format&fit=crop&q=80&w=800",
+    image: "/src/assets/images/mosquito_net_tent_1780989982798.png",
     rating: 4.7,
     numReviews: 40,
     stock: 65
@@ -140,7 +140,7 @@ const RAW_PRODUCTS = [
     description: "Ultra-compact aesthetic mini flat iron designed with precision floating titanium-coated heating plates. Rehearses high-efficiency continuous styling and instant uniform heating up to 200°C. Perfect lightweight travel-sized design for touch-ups, short cuts, bangs, and smooth straight finishes anywhere.",
     price: 787.5,
     category: "Health & Beauty",
-    image: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&q=80&w=800",
+    image: "/src/assets/images/mini_straightener_1780989997065.png",
     rating: 4.4,
     numReviews: 14,
     stock: 45
