@@ -144,6 +144,83 @@ const RAW_PRODUCTS = [
     rating: 4.4,
     numReviews: 14,
     stock: 45
+  },
+  {
+    id: "mart-product-14",
+    name: "Rongxin Europe Plug Portable Mini Clip Fan Or Table Fan 3 Blades",
+    description: "Ultra-convenient and highly flexible portable cooling fan featuring 3 streamlined blades. Designed for silent operation on your desk, bedside table, or clipped onto bookshelves. Perfect energy-efficient companion for hot summer afternoons.",
+    price: 715.00,
+    category: "Electronic Devices",
+    image: "https://static-01.daraz.com.np/p/c4932d72ce8e6984f0aa13b46148f628.jpg",
+    rating: 4.6,
+    numReviews: 18,
+    stock: 32
+  },
+  {
+    id: "mart-product-15",
+    name: "Asta WOLF Strike Wireless Earbuds (New Launch) | 45H Playtime | Dual ENC Noise Cancellation",
+    description: "High-fidelity wireless audio earbuds with an incredible 45-hour total playtime. Features dual Environmental Noise Cancellation (ENC) for crystal-clear phone calls, ultra-low 40ms audio-to-video latency, stable Bluetooth 5.3 technology, and rapid charging.",
+    price: 999.00,
+    category: "Electronic Devices",
+    image: "https://static-01.daraz.com.np/p/8c7d033a6298763d5e493de1146520a2.jpg",
+    rating: 4.8,
+    numReviews: 54,
+    stock: 70
+  },
+  {
+    id: "mart-product-16",
+    name: "Sparnod Fitness STH-3002 Home Use Walking Pad & Treadmill Compact Ultra-Slim",
+    description: "Ultra-slim, ready-to-use compact home treadmill and walking pad workspace companion. Engineered with high-durability shock absorption layers, dynamic real-time LED display, and robust 100 Kg maximum loading capacity.",
+    price: 26499.00,
+    category: "Sports & Outdoor",
+    image: "https://static-01.daraz.com.np/p/934b8752e6a939eab21e0c2ad819ae39.jpg",
+    rating: 4.9,
+    numReviews: 11,
+    stock: 8
+  },
+  {
+    id: "mart-product-17",
+    name: "Unisex Linen Comfort Trouser | Breathable Summer Casual Relax Fit Track Pants",
+    description: "Premium lightweight linen comfort trousers designed for cozy summer wear. Features breathable weave, elegant loose relax-fit shape, and elastic waistband with adjustable drawstrings.",
+    price: 1599.00,
+    category: "Home & Lifestyle",
+    image: "https://np-live-21.slatic.net/kf/Sb95a2add06d249c6a0a04da9cddd88a0i.jpg",
+    rating: 4.5,
+    numReviews: 28,
+    stock: 60
+  },
+  {
+    id: "mart-product-18",
+    name: "Prime Picks Premium Dental Flosser | IPX7 Portable Oral Irrigator",
+    description: "Aesthetic compact waterproof electric dental water flosser. Configured with 3-speed intelligence modes (Soft, Normal, Pulse) for supreme plaque cleaning, deep ortho care, and healthy gums.",
+    price: 799.00,
+    category: "Health & Beauty",
+    image: "https://static-01.daraz.com.np/p/40a9811a23e9f02ad76ced500ec9670a.png",
+    rating: 4.7,
+    numReviews: 44,
+    stock: 40
+  },
+  {
+    id: "mart-product-19",
+    name: "Big Size Desk PC Computer Desktop Mouse Mat Pad",
+    description: "Spacious extra-large desk pad designed to accommodate your computer keyboard and high-speed gaming mice. Features smooth premium anti-fray micro-woven design and skid-proof rubber base.",
+    price: 370.00,
+    category: "Electronic Devices",
+    image: "https://static-01.daraz.com.np/p/0034b9285cc735fa96248c0658566804.jpg",
+    rating: 4.6,
+    numReviews: 39,
+    stock: 110
+  },
+  {
+    id: "mart-product-20",
+    name: "Reusable Lint Remover For Pets – Ideal for Clothes, Beds & Carpets",
+    description: "Effective eco-friendly self-cleaning hair and lint remover. Effortlessly rolls away dog and cat fur from delicate fabrics, linen sheets, couches, blankets, and vehicle seats.",
+    price: 66.00,
+    category: "Home & Lifestyle",
+    image: "https://static-01.daraz.com.np/p/e5c07206bbcd03db8265986d4023b637.jpg",
+    rating: 4.4,
+    numReviews: 65,
+    stock: 150
   }
 ];
 

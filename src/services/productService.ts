@@ -80,7 +80,11 @@ export const productService = {
         productService.seedIfEmpty(false);
       } else {
         // Guard check to auto-seed newly added custom products directly to Firestore or update their images
-        const newProductIds = ['mart-product-9', 'mart-product-10', 'mart-product-11', 'mart-product-12', 'mart-product-13'];
+        const newProductIds = [
+          'mart-product-9', 'mart-product-10', 'mart-product-11', 'mart-product-12', 'mart-product-13',
+          'mart-product-14', 'mart-product-15', 'mart-product-16', 'mart-product-17', 'mart-product-18',
+          'mart-product-19', 'mart-product-20'
+        ];
         newProductIds.forEach(productId => {
           const dbProduct = dbProducts.find(p => p.id === productId);
           if (!dbProduct) {
