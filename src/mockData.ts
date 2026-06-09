@@ -221,6 +221,116 @@ const RAW_PRODUCTS = [
     rating: 4.4,
     numReviews: 65,
     stock: 150
+  },
+  {
+    id: "mart-product-21",
+    name: "Goldstar Classic Unisex Sneakers (G10-S301) - Lightweight Walking Shoes",
+    description: "Nepal's most iconic domestic footwear brand. The Goldstar G10 unisex sneakers are designed for day-to-day comfort, featuring a resilient synthetic canvas finish, non-slip lightweight rubber sole, and classic double-stripe aesthetics. Perfect for morning runs, casual outings, or college wear.",
+    price: 1150.00,
+    category: "Sports & Outdoor",
+    image: "https://static-01.daraz.com.np/p/e3caacda676b25ea6bfcf4b9de623efc.jpg",
+    rating: 4.7,
+    numReviews: 120,
+    stock: 55
+  },
+  {
+    id: "mart-product-22",
+    name: "Baltra Rapid-Boil Electric Stainless Steel Kettle (1.8L, 1500W)",
+    description: "Modern high-speed Baltra water heater. Built of premium polished stainless steel with double wall thermal intelligence. Features 360-degree wireless swivel base, automatic safety steam-sensor shutoff, boil-dry protection, and visual LED indicator. Essential kitchen assistant for homes in Kathmandu.",
+    price: 1399.00,
+    category: "Electronic Devices",
+    image: "https://static-01.daraz.com.np/p/9fbe7e9154ae1b4618ecbf3589df28e2.jpg",
+    rating: 4.6,
+    numReviews: 87,
+    stock: 30
+  },
+  {
+    id: "mart-product-23",
+    name: "Ultima Watch Circle Smartwatch with Bluetooth Calling and AMOLED Display",
+    description: "Premium Nepalese tech brand smartwatch featuring 1.43\" ultra-bypassing AMOLED display, intelligent bluetooth phone calling system with noise isolation microphone, 24H active heart rate sensor, sleep cycle scanner, SpO2 tracker, and 100+ active fitness modes. Elegant dark metallic case.",
+    price: 3899.00,
+    category: "Electronic Devices",
+    image: "https://static-01.daraz.com.np/p/d9bc0fa6bc43df9fac9cda6c2bef9433.jpg",
+    rating: 4.9,
+    numReviews: 45,
+    stock: 15
+  },
+  {
+    id: "mart-product-24",
+    name: "Mamaearth Ultra-Light Indian Sunscreen SPF50 with Turmeric & Carrot Seed",
+    description: "Dermatologically certified SPF 50 non-greasy lotion specifically formulated for Indian & Nepalese skin tones. Infused with natural turmeric extracts and vitamin-rich carrot seed oil to shield against severe UV damage, block blue-screen emission, and preserve skin health without white casts.",
+    price: 750.00,
+    category: "Health & Beauty",
+    image: "https://static-01.daraz.com.np/p/f96bee7e7ac8cbef2cde1297eefcbdf2.jpg",
+    rating: 4.8,
+    numReviews: 92,
+    stock: 65
+  },
+  {
+    id: "mart-product-25",
+    name: "Kathmandu Craft Wooden 12-Jar Rotating Spice Rack / Masala Box Organizer",
+    description: "Aesthetic, handcrafted rotational spice rack constructed from durable imported timber. Features 12 clear glass airtight shaker jars, smooth-spinning turntable mechanism, and space-saving vertical footprint. Organizes your native Nepalese spices in beautiful rusticity.",
+    price: 1850.00,
+    category: "Home & Lifestyle",
+    image: "https://static-01.daraz.com.np/p/d05be7ea5c7aefcd3baf62cdfa6eefcb.jpg",
+    rating: 4.5,
+    numReviews: 24,
+    stock: 25
+  },
+  {
+    id: "mart-product-26",
+    name: "Mivon Professional Non-Slip 6mm TPE Yoga & Exercise Mat",
+    description: "Dual-layer eco-friendly textured TPE fitness mat with superior cushioning, joint-safe shock absorption, alignment assistance stripes, and sweat-proof anti-tear technology. Comes complete with a neat black mesh travel carry bag and strap.",
+    price: 1250.00,
+    category: "Sports & Outdoor",
+    image: "https://static-01.daraz.com.np/p/40cbefced289ce08fae84cd01eef2cf4.jpg",
+    rating: 4.6,
+    numReviews: 19,
+    stock: 40
+  },
+  {
+    id: "mart-product-27",
+    name: "Pigeon Deluxe Inner-Lid Stainless Steel Pressure Cooker - 3 Liters",
+    description: "Heavily-engineered food-grade stainless steel pressure cooker. Configured with a thick sandwich base for uniform heat distribution, sturdy heat-resistant handles, and triple safety protection mechanisms. Absolute household darling for cooking rice and dal perfectly in record time.",
+    price: 2950.00,
+    category: "Home & Lifestyle",
+    image: "https://static-01.daraz.com.np/p/16cef2a94de2ac0af9cdbe1ae82cefab.jpg",
+    rating: 4.8,
+    numReviews: 54,
+    stock: 18
+  },
+  {
+    id: "mart-product-28",
+    name: "Joyroom Portable Waterproof Bluetooth Speaker with RGB Light Show",
+    description: "Compact tubular outdoor speaker system with dual passive radiators delivering deep punchy bass. Features 12 hours of uninterrupted audio play, IPX7 complete waterproof build, multi-mode mesmerizing LED light effects, and stable Bluetooth 5.1 connection.",
+    price: 2650.00,
+    category: "Electronic Devices",
+    image: "https://static-01.daraz.com.np/p/82beef977ebadced4ef67ad8efc2efb3.jpg",
+    rating: 4.7,
+    numReviews: 31,
+    stock: 22
+  },
+  {
+    id: "mart-product-29",
+    name: "Lotus Herbals Safe Sun 3-in-1 Matte Look Daily Sunscreen SPF 40",
+    description: "Popular tinted matte daily sunscreen cream combining high-grade UV protection with lightweight makeup foundation finish. Features sweat-proof, oil-controlling, and skin-brightening properties. Delivers non-sticky, velvet-smooth compliance throughout summer.",
+    price: 620.00,
+    category: "Health & Beauty",
+    image: "https://static-01.daraz.com.np/p/1abe7ebda6278fcdaeef46cdef82f9c3.jpg",
+    rating: 4.5,
+    numReviews: 62,
+    stock: 80
+  },
+  {
+    id: "mart-product-30",
+    name: "Asta WOLF Boost 20000mAh Ultra-Fast Power Bank with Liquid LED Display",
+    description: "Sleek high-density portable power battery backing 22.5W Power Delivery (PD) and Quick Charge 3.0. Equipped with 3 smart output slots, advanced smart-chip protection against overheating/overvoltage, and stunning liquid crystal display to track charge percentage.",
+    price: 2499.00,
+    category: "Electronic Devices",
+    image: "https://static-01.daraz.com.np/p/d9caedfa78bcdeba69cde47ae8efc2ba9.jpg",
+    rating: 4.8,
+    numReviews: 38,
+    stock: 35
   }
 ];
 

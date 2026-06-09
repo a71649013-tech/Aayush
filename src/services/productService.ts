@@ -83,7 +83,9 @@ export const productService = {
         const newProductIds = [
           'mart-product-9', 'mart-product-10', 'mart-product-11', 'mart-product-12', 'mart-product-13',
           'mart-product-14', 'mart-product-15', 'mart-product-16', 'mart-product-17', 'mart-product-18',
-          'mart-product-19', 'mart-product-20'
+          'mart-product-19', 'mart-product-20', 'mart-product-21', 'mart-product-22', 'mart-product-23',
+          'mart-product-24', 'mart-product-25', 'mart-product-26', 'mart-product-27', 'mart-product-28',
+          'mart-product-29', 'mart-product-30'
         ];
         newProductIds.forEach(productId => {
           const dbProduct = dbProducts.find(p => p.id === productId);
