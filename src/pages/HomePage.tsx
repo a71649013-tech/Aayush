@@ -106,14 +106,14 @@ export default function HomePage({ products }: { products: Product[] }) {
         <div className="flex whitespace-nowrap animate-marquee">
           <div className="flex gap-8 text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.2em] px-4">
             <span>FREE SHIPPING OVER रू5000</span>
-            <span>• 60+ REAL DARAZ PRODUCTS</span>
+            <span>• 30+ REAL DARAZ PRODUCTS</span>
             <span>• +5% MARKUP APPLIED</span>
             <span>• CASH ON DELIVERY</span>
             <span>• SUPPORT LOCAL ARTISANS</span>
           </div>
           <div className="flex gap-8 text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.2em] px-4">
             <span>FREE SHIPPING OVER रू5000</span>
-            <span>• 60+ REAL DARAZ PRODUCTS</span>
+            <span>• 30+ REAL DARAZ PRODUCTS</span>
             <span>• +5% MARKUP APPLIED</span>
             <span>• CASH ON DELIVERY</span>
             <span>• SUPPORT LOCAL ARTISANS</span>
