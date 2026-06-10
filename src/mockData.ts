@@ -162,7 +162,7 @@ const RAW_PRODUCTS = [
     description: "Experience sparkling elegance with this moisturizing pearlescent lip gloss stick. Engineered with long-lasting hydration factors, premium shimmering glitter micro-particles, and a precise control twist-up pen design. Delivers a soft, non-sticky velvet shimmer finish for gorgeous look daily.",
     price: 248.00,
     category: "Health & Beauty",
-    image: "https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&q=80&w=800",
+    image: "https://images.unsplash.com/photo-1625093742435-6fa192b6fb10?auto=format&fit=crop&q=80&w=800",
     rating: 4.9,
     numReviews: 28,
     stock: 120
@@ -173,7 +173,7 @@ const RAW_PRODUCTS = [
     description: "Unparalleled cinema-grade home entertainment hub. Equipped with native 1080P resolution with 4K decoding support, ultra-bright 390 ANSI lumens, integrated Android 13 OS for instant access to Netflix and YouTube, ultra-fast WiFi 6 and Bluetooth 5.0, auto-focus, and flexible vertical keystone correction.",
     price: 12857.00,
     category: "Electronic Devices",
-    image: "https://images.unsplash.com/photo-1535016120720-40c646be5580?auto=format&fit=crop&q=80&w=800",
+    image: "https://images.unsplash.com/photo-1601944179066-297bff591452?auto=format&fit=crop&q=80&w=800",
     rating: 4.8,
     numReviews: 45,
     stock: 15
@@ -184,7 +184,7 @@ const RAW_PRODUCTS = [
     description: "High-comfort utility daily wear cargo trousers. Tailored from top-tier heavy cotton twill designed to breathe and stretch under rugged outdoor conditions. Set with multiple extra-roomy utility pockets, secure lock stitching, button-fly zipper, and an ergonomic comfortable straight fit contour.",
     price: 1429.00,
     category: "Sports & Outdoor",
-    image: "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?auto=format&fit=crop&q=80&w=800",
+    image: "https://images.unsplash.com/photo-1516257984-b1b4d707412e?auto=format&fit=crop&q=80&w=800",
     rating: 4.7,
     numReviews: 64,
     stock: 40
