@@ -155,6 +155,39 @@ const RAW_PRODUCTS = [
     rating: 4.4,
     numReviews: 65,
     stock: 150
+  },
+  {
+    id: "mart-product-31",
+    name: "Pearlescent Lip Gloss Stick Moisturizing Long Lasting Sparkling Lip Balm Shimmer Lipstick Pen Makeup Cosmetics",
+    description: "Experience sparkling elegance with this moisturizing pearlescent lip gloss stick. Engineered with long-lasting hydration factors, premium shimmering glitter micro-particles, and a precise control twist-up pen design. Delivers a soft, non-sticky velvet shimmer finish for gorgeous look daily.",
+    price: 248.00,
+    category: "Health & Beauty",
+    image: "https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&q=80&w=800",
+    rating: 4.9,
+    numReviews: 28,
+    stock: 120
+  },
+  {
+    id: "mart-product-32",
+    name: "HY320 4K Android 13 Projector | Native 1080P | 390 ANSI | WiFi6 | BT5.0 | Portable Home Cinema",
+    description: "Unparalleled cinema-grade home entertainment hub. Equipped with native 1080P resolution with 4K decoding support, ultra-bright 390 ANSI lumens, integrated Android 13 OS for instant access to Netflix and YouTube, ultra-fast WiFi 6 and Bluetooth 5.0, auto-focus, and flexible vertical keystone correction.",
+    price: 12857.00,
+    category: "Electronic Devices",
+    image: "https://images.unsplash.com/photo-1535016120720-40c646be5580?auto=format&fit=crop&q=80&w=800",
+    rating: 4.8,
+    numReviews: 45,
+    stock: 15
+  },
+  {
+    id: "mart-product-33",
+    name: "Men Multipocket Cargo Trouser",
+    description: "High-comfort utility daily wear cargo trousers. Tailored from top-tier heavy cotton twill designed to breathe and stretch under rugged outdoor conditions. Set with multiple extra-roomy utility pockets, secure lock stitching, button-fly zipper, and an ergonomic comfortable straight fit contour.",
+    price: 1429.00,
+    category: "Sports & Outdoor",
+    image: "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?auto=format&fit=crop&q=80&w=800",
+    rating: 4.7,
+    numReviews: 64,
+    stock: 40
   }
 ];
 
