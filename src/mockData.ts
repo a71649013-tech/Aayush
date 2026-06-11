@@ -5,6 +5,8 @@ import jellyLipstickPen from './assets/images/jelly_lipstick_pen_1781074707023.p
 import blackCargoPants from './assets/images/black_cargo_pants_1781074891448.png';
 // @ts-ignore
 import hy320Projector from './assets/images/hy320_portable_projector_1781075116231.png';
+// @ts-ignore
+import womenFlatSandal from './assets/images/women_flat_sandal_1781075767212.png';
 
 // Real retail products from the user's shop photo collection
 const RAW_PRODUCTS = [
@@ -194,6 +196,17 @@ const RAW_PRODUCTS = [
     rating: 4.7,
     numReviews: 64,
     stock: 40
+  },
+  {
+    id: "mart-product-34",
+    name: "Women's Flat Sandal Half Close New",
+    description: "Introducing the New Stylist Design Flat Close Sandal for Women, a stylish and comfortable choice for your casual footwear collection. Crafted with high-grade PU leather, this flat sandal offers a trendy and versatile look that pairs effortlessly with various outfits. The elegant double strap design with gold buckle details provides a secure and comfortable fit, while the flat sole ensures all-day walking comfort. Perfect for everyday wear, work, or casual outings.",
+    price: 850.00,
+    category: "Fashion",
+    image: womenFlatSandal,
+    rating: 4.8,
+    numReviews: 32,
+    stock: 60
   }
 ];
 
