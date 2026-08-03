@@ -76,49 +76,11 @@ export const productService = {
       });
       
       if (snapshot.empty) {
-        // Auto-seed if the database is currently empty
-        productService.seedIfEmpty(false);
+        // If snapshot is empty, pass empty array to subscriber
+        callback([]);
       } else {
-        // Delete orphaned mart-product-* entries that are no longer in our local mock data
-        dbProducts.forEach(dbProduct => {
-          if (dbProduct.id.startsWith('mart-product-') && !MOCK_PRODUCTS.some(p => p.id === dbProduct.id)) {
-            deleteDoc(doc(db, COLLECTION_NAME, dbProduct.id)).catch(err => {
-              console.warn(`Failed to clean up orphaned db product ${dbProduct.id}:`, err);
-            });
-          }
-        });
-
-        // Dynamic alignment of local mock products (including our new items and 5% pricing updates)
-        MOCK_PRODUCTS.forEach(localMock => {
-          const dbProduct = dbProducts.find(p => p.id === localMock.id);
-          if (!dbProduct) {
-            // New product: Auto-seed missing product directly to Firestore
-            const { id, ...data } = localMock;
-            setDoc(doc(db, COLLECTION_NAME, id), {
-              ...data,
-              createdAt: serverTimestamp()
-            }).catch(err => {
-              console.warn(`Failed to auto-seed new product ${localMock.id} to Firestore:`, err);
-            });
-          } else {
-            // Existing product: Ensure live database prices and images reflect local updates
-            const updates: any = {};
-            if (dbProduct.image !== localMock.image) {
-              updates.image = localMock.image;
-            }
-            if (dbProduct.price !== localMock.price) {
-              updates.price = localMock.price;
-            }
-            if (Object.keys(updates).length > 0) {
-              updateDoc(doc(db, COLLECTION_NAME, localMock.id), updates).catch(err => {
-                console.warn(`Failed to align database product ${localMock.id}:`, err);
-              });
-            }
-          }
-        });
+        callback(dbProducts);
       }
-      
-      callback(dbProducts);
     }, (error) => {
       console.warn('Firestore subscription failed:', error);
       callback([]);

@@ -1,13 +1,124 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Product, CartItem } from '../types';
-import { Package, ShoppingCart, TrendingUp, Users, Edit3, Trash2, CheckCircle, Clock, ShieldAlert, Zap, Plus, Upload, X, MessageSquare, Bell, Send, User as UserIcon } from 'lucide-react';
+import { Package, ShoppingCart, TrendingUp, Users, Edit3, Trash2, CheckCircle, Clock, ShieldAlert, Zap, Plus, Upload, X, MessageSquare, Bell, Send, User as UserIcon, Link as LinkIcon, Globe, Video as VideoIcon, Play, Sparkles, ExternalLink, RefreshCw, FileText, Layers } from 'lucide-react';
 import { formatCurrency, cn } from '../lib/utils';
 import { orderService } from '../services/orderService';
 import { productService } from '../services/productService';
 import { useFirebase } from '../context/FirebaseContext';
 import { ProductImage } from '../components/ProductImage';
+import { formatVideoEmbedUrl, PRESET_PRODUCT_VIDEOS } from '../lib/videoUtils';
 import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { CATEGORIES } from '../constants';
+
+const PRESET_PRODUCT_IMAGES = [
+  { name: 'Earbuds', url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=800' },
+  { name: 'Smart Watch', url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=800' },
+  { name: 'Smartphone', url: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&q=80&w=800' },
+  { name: 'Sandals', url: 'https://images.unsplash.com/photo-1543163521-1bf539c55dd2?auto=format&fit=crop&q=80&w=800' },
+  { name: 'Biker Jacket', url: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&q=80&w=800' },
+  { name: 'Backpack', url: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&q=80&w=800' },
+  { name: 'Beauty Set', url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&q=80&w=800' }
+];
+
+const processVideoFile = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    if (file.size <= 15 * 1024 * 1024) {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target?.result as string);
+      reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(file);
+    } else {
+      const objectUrl = URL.createObjectURL(file);
+      resolve(objectUrl);
+    }
+  });
+};
+
+const parseProductFromUrl = (inputUrl: string) => {
+  let url = inputUrl.trim();
+  if (!url) return null;
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    url = 'https://' + url;
+  }
+
+  let domain = 'Online Store';
+  if (url.includes('amazon.')) domain = 'Amazon';
+  else if (url.includes('flipkart.')) domain = 'Flipkart';
+  else if (url.includes('daraz.')) domain = 'Daraz';
+  else if (url.includes('myntra.')) domain = 'Myntra';
+  else if (url.includes('ebay.')) domain = 'eBay';
+  else if (url.includes('walmart.')) domain = 'Walmart';
+  else if (url.includes('alibaba.') || url.includes('aliexpress.')) domain = 'AliExpress';
+
+  let cleanName = '';
+  try {
+    const parsed = new URL(url);
+    const pathname = parsed.pathname.replace(/\/$/, '');
+    const pathParts = pathname.split('/').filter(p => p.length > 2 && !p.includes('.html') && !p.startsWith('dp') && !p.startsWith('p') && !p.match(/^[0-9a-f]{8,}$/i));
+    cleanName = pathParts.join(' ');
+  } catch (e) {
+    cleanName = url;
+  }
+
+  cleanName = cleanName
+    .replace(/[-_]/g, ' ')
+    .replace(/\b(pd|dp|gp|product|item|ref|qid|sr|buy|online)\b/gi, '')
+    .replace(/[^a-zA-Z0-9 ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (cleanName.length < 4) {
+    cleanName = `${domain} Featured Product`;
+  } else {
+    cleanName = cleanName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+  }
+
+  const nameLower = cleanName.toLowerCase();
+  let category = 'Fashion & Clothing';
+  let image = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=800';
+  let estimatedPrice = 2450;
+
+  if (nameLower.includes('phone') || nameLower.includes('iphone') || nameLower.includes('samsung') || nameLower.includes('earbud') || nameLower.includes('headphone') || nameLower.includes('watch') || nameLower.includes('laptop') || nameLower.includes('electronics') || nameLower.includes('gadget') || nameLower.includes('bluetooth') || nameLower.includes('buds')) {
+    category = 'Electronics & Gadgets';
+    image = nameLower.includes('watch')
+      ? 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=800'
+      : nameLower.includes('earbud') || nameLower.includes('headphone') || nameLower.includes('buds')
+      ? 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=800'
+      : 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&q=80&w=800';
+    estimatedPrice = 14500;
+  } else if (nameLower.includes('sandal') || nameLower.includes('shoe') || nameLower.includes('shirt') || nameLower.includes('dress') || nameLower.includes('jacket') || nameLower.includes('wear') || nameLower.includes('fashion') || nameLower.includes('cloth') || nameLower.includes('boot')) {
+    category = 'Fashion & Clothing';
+    image = nameLower.includes('sandal') || nameLower.includes('shoe')
+      ? 'https://images.unsplash.com/photo-1543163521-1bf539c55dd2?auto=format&fit=crop&q=80&w=800'
+      : 'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&q=80&w=800';
+    estimatedPrice = 1950;
+  } else if (nameLower.includes('bag') || nameLower.includes('wallet') || nameLower.includes('backpack')) {
+    category = 'Fashion & Clothing';
+    image = 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&q=80&w=800';
+    estimatedPrice = 2800;
+  } else if (nameLower.includes('tea') || nameLower.includes('food') || nameLower.includes('grocery') || nameLower.includes('snack') || nameLower.includes('honey')) {
+    category = 'Groceries & Foods';
+    image = 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&q=80&w=800';
+    estimatedPrice = 850;
+  } else if (nameLower.includes('craft') || nameLower.includes('wood') || nameLower.includes('statue') || nameLower.includes('decor')) {
+    category = 'Handicrafts & Decor';
+    image = 'https://images.unsplash.com/photo-1606744888344-49423b812d02?auto=format&fit=crop&q=80&w=800';
+    estimatedPrice = 3800;
+  }
+
+  return {
+    name: cleanName,
+    price: estimatedPrice,
+    category,
+    stock: 35,
+    description: `Original authentic item imported from ${domain}. Direct specs, premium build quality, warranty coverage, and express delivery across Nepal. Source: ${url}`,
+    image,
+    videoUrl: '',
+    sourceDomain: domain,
+    originalUrl: url
+  };
+};
 
 const compressImage = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -100,11 +211,12 @@ const compressImage = (file: File): Promise<string> => {
   });
 };
 
-export default function AdminDashboard({ products, onAddProduct, onUpdateProduct, onDeleteProduct }: { 
+export default function AdminDashboard({ products, onAddProduct, onUpdateProduct, onDeleteProduct, onDeleteAllProducts }: { 
   products: Product[], 
   onAddProduct: (p: any) => void,
   onUpdateProduct: (id: string, p: any) => void,
-  onDeleteProduct: (id: string) => void
+  onDeleteProduct: (id: string) => void,
+  onDeleteAllProducts?: () => void
 }) {
   const { 
     user, 
@@ -113,20 +225,50 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
     requestNotificationPermission, 
     dispatchNotification 
   } = useFirebase();
-  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'messages'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'import' | 'messages'>('orders');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showDeleteAllConfirmModal, setShowDeleteAllConfirmModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+
+  const handleDeleteAllProducts = async () => {
+    try {
+      setSubmitting(true);
+      if (onDeleteAllProducts) {
+        await onDeleteAllProducts();
+      } else {
+        for (const p of products) {
+          await onDeleteProduct(p.id);
+        }
+      }
+      setShowDeleteAllConfirmModal(false);
+      dispatchNotification("All Products Wiped", "Store inventory has been completely cleared.", "promos");
+    } catch (err: any) {
+      console.error("Error clearing store inventory:", err);
+      alert(err?.message || "Failed to delete all products.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
   const [orders, setOrders] = useState<any[]>([]);
   const [compressing, setCompressing] = useState(false);
+  const [videoProcessing, setVideoProcessing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  
+  // Link Product Importer State
+  const [importUrl, setImportUrl] = useState('');
+  const [importedProduct, setImportedProduct] = useState<any | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importSuccessMsg, setImportSuccessMsg] = useState<string | null>(null);
+
   const [newProduct, setNewProduct] = useState({
     name: '',
     price: 0,
-    category: 'Handicrafts',
+    category: 'Handicrafts & Decor',
     stock: 50,
     description: '',
-    image: ''
+    image: '',
+    videoUrl: ''
   });
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
 
@@ -328,6 +470,7 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
       setSubmitError(null);
       await onAddProduct({
         ...newProduct,
+        videoUrl: newProduct.videoUrl ? newProduct.videoUrl.trim() : undefined,
         sellerId: user?.id || 'admin',
         sellerName: user?.name || 'Administrator',
         status: 'active'
@@ -336,10 +479,11 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
       setNewProduct({
         name: '',
         price: 0,
-        category: 'Handicrafts',
+        category: 'Handicrafts & Decor',
         stock: 50,
         description: '',
-        image: ''
+        image: '',
+        videoUrl: ''
       });
     } catch (err: any) {
       console.error("Save product error:", err);
@@ -384,13 +528,120 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
     }
   };
 
+  const handleVideoUploadForNew = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        setVideoProcessing(true);
+        const processed = await processVideoFile(file);
+        setNewProduct(prev => ({ ...prev, videoUrl: processed }));
+      } catch (err) {
+        alert('Could not process video file.');
+      } finally {
+        setVideoProcessing(false);
+      }
+    }
+  };
+
+  const handleVideoUploadForEdit = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && editingProduct) {
+      try {
+        setVideoProcessing(true);
+        const processed = await processVideoFile(file);
+        setEditingProduct({ ...editingProduct, videoUrl: processed });
+      } catch (err) {
+        alert('Could not process video file.');
+      } finally {
+        setVideoProcessing(false);
+      }
+    }
+  };
+
+  const handleVideoUploadForImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && importedProduct) {
+      try {
+        setVideoProcessing(true);
+        const processed = await processVideoFile(file);
+        setImportedProduct({ ...importedProduct, videoUrl: processed });
+      } catch (err) {
+        alert('Could not process video file.');
+      } finally {
+        setVideoProcessing(false);
+      }
+    }
+  };
+
+  const handleFetchUrlProduct = async (targetUrl?: string) => {
+    const urlToParse = targetUrl || importUrl;
+    if (!urlToParse.trim()) return;
+
+    setIsImporting(true);
+    setImportSuccessMsg(null);
+    setImportUrl(urlToParse);
+
+    try {
+      const res = await fetch('/api/scrape-product', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: urlToParse })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setImportedProduct(data);
+      } else {
+        const fallback = parseProductFromUrl(urlToParse);
+        setImportedProduct(fallback);
+      }
+    } catch (err) {
+      console.warn("AI URL scraper endpoint error, using fallback parser:", err);
+      const fallback = parseProductFromUrl(urlToParse);
+      setImportedProduct(fallback);
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const handlePublishImportedProduct = async () => {
+    if (!importedProduct) return;
+    try {
+      setSubmitting(true);
+      await onAddProduct({
+        name: importedProduct.name,
+        price: Number(importedProduct.price),
+        category: importedProduct.category,
+        stock: Number(importedProduct.stock) || 35,
+        description: importedProduct.description,
+        image: importedProduct.image,
+        videoUrl: importedProduct.videoUrl ? importedProduct.videoUrl.trim() : undefined,
+        sellerId: user?.id || 'admin',
+        sellerName: `${importedProduct.sourceDomain || 'Global'} Import`,
+        status: 'active'
+      });
+      setImportSuccessMsg(`Successfully imported "${importedProduct.name}" into store inventory!`);
+      dispatchNotification("Product Imported!", `"${importedProduct.name}" was imported from link and published live.`, "promos");
+      setImportedProduct(null);
+      setImportUrl('');
+    } catch (err: any) {
+      console.error("Error publishing imported product:", err);
+      alert(err?.message || "Failed to publish imported product.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (editingProduct) {
       try {
         setSubmitting(true);
         setSubmitError(null);
-        await onUpdateProduct(editingProduct.id, editingProduct);
+        await onUpdateProduct(editingProduct.id, {
+          ...editingProduct,
+          videoUrl: editingProduct.videoUrl ? editingProduct.videoUrl.trim() : undefined
+        });
         setEditingProduct(null);
       } catch (err: any) {
         console.error("Edit product error:", err);
@@ -415,18 +666,6 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
     if (window.confirm('This will add all demo products to your database. Continue?')) {
       await productService.seedIfEmpty(true);
       alert('Demo products seeded successfully!');
-    }
-  };
-
-  const handleDeleteAllProducts = async () => {
-    if (window.confirm('WARNING: Are you absolutely sure you want to delete ALL products from Nepali Mart? This action is irreversible.')) {
-      try {
-        await productService.deleteAllProducts();
-        alert('All products successfully deleted from the database!');
-      } catch (err) {
-        console.error("Error deleting products:", err);
-        alert('Failed to delete all products. Please check console.');
-      }
     }
   };
 
@@ -513,11 +752,11 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
 
         {/* Management Area */}
         <div id="management-area" className="bg-white rounded-sm shadow-sm overflow-hidden">
-          <div className="flex border-b border-neutral-100">
+          <div className="flex border-b border-neutral-100 overflow-x-auto">
             <button 
               onClick={() => setActiveTab('orders')}
               className={cn(
-                "px-8 py-4 text-xs font-bold uppercase tracking-widest transition-all border-b-2",
+                "px-8 py-4 text-xs font-bold uppercase tracking-widest transition-all border-b-2 shrink-0",
                 activeTab === 'orders' ? "border-daraz-orange text-daraz-orange" : "border-transparent text-neutral-400 hover:text-neutral-600"
               )}
             >
@@ -526,16 +765,26 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
             <button 
               onClick={() => setActiveTab('products')}
               className={cn(
-                "px-8 py-4 text-xs font-bold uppercase tracking-widest transition-all border-b-2",
+                "px-8 py-4 text-xs font-bold uppercase tracking-widest transition-all border-b-2 shrink-0",
                 activeTab === 'products' ? "border-daraz-orange text-daraz-orange" : "border-transparent text-neutral-400 hover:text-neutral-600"
               )}
             >
               Product Management
             </button>
             <button 
+              onClick={() => setActiveTab('import')}
+              className={cn(
+                "px-8 py-4 text-xs font-bold uppercase tracking-widest transition-all border-b-2 shrink-0 flex items-center gap-2",
+                activeTab === 'import' ? "border-daraz-orange text-daraz-orange" : "border-transparent text-neutral-400 hover:text-neutral-600"
+              )}
+            >
+              <LinkIcon size={14} className="text-amber-500" />
+              Import via Link (Flipkart/Amazon)
+            </button>
+            <button 
               onClick={() => setActiveTab('messages')}
               className={cn(
-                "px-8 py-4 text-xs font-bold uppercase tracking-widest transition-all border-b-2",
+                "px-8 py-4 text-xs font-bold uppercase tracking-widest transition-all border-b-2 shrink-0",
                 activeTab === 'messages' ? "border-daraz-orange text-daraz-orange" : "border-transparent text-neutral-400 hover:text-neutral-600"
               )}
             >
@@ -599,14 +848,33 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
               </div>
             ) : activeTab === 'products' ? (
               <div className="space-y-6">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-sm font-bold uppercase tracking-tight italic">Inventory Overview</h3>
-                  <button 
-                    onClick={() => setShowAddModal(true)}
-                    className="bg-daraz-orange text-white px-4 py-2 rounded-sm text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all active:scale-95"
-                  >
-                    Add New Product
-                  </button>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                  <div>
+                    <h3 className="text-sm font-bold uppercase tracking-tight italic">Inventory Overview</h3>
+                    <p className="text-[10px] text-neutral-400 font-medium">Manage existing items or import directly from external store links</p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    {products.length > 0 && (
+                      <button 
+                        onClick={() => setShowDeleteAllConfirmModal(true)}
+                        className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-sm text-[10px] font-bold uppercase tracking-widest transition-all active:scale-95 flex items-center gap-1.5 shadow-sm cursor-pointer"
+                      >
+                        <Trash2 size={12} /> Delete All Products ({products.length})
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => setActiveTab('import')}
+                      className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-sm text-[10px] font-bold uppercase tracking-widest transition-all active:scale-95 flex items-center gap-1.5 shadow-sm cursor-pointer"
+                    >
+                      <LinkIcon size={12} /> Import from Link
+                    </button>
+                    <button 
+                      onClick={() => setShowAddModal(true)}
+                      className="bg-daraz-orange text-white px-4 py-2 rounded-sm text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all active:scale-95 flex items-center gap-1 shadow-sm cursor-pointer"
+                    >
+                      <Plus size={12} /> Add New Product
+                    </button>
+                  </div>
                 </div>
                 <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
@@ -616,6 +884,7 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
                       <th className="px-4 py-3">Product Name</th>
                       <th className="px-4 py-3">Price</th>
                       <th className="px-4 py-3">Stock</th>
+                      <th className="px-4 py-3">Video</th>
                       <th className="px-4 py-3">Rating</th>
                       <th className="px-4 py-3 text-right">Edit</th>
                     </tr>
@@ -626,7 +895,12 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
                         <td className="px-4 py-3 border-r border-neutral-50 w-16">
                            <ProductImage src={product.image} alt="" category={product.category} className="w-10 h-10 object-cover rounded-sm" />
                         </td>
-                        <td className="px-4 py-3 font-bold">{product.name}</td>
+                        <td className="px-4 py-3 font-bold">
+                          <div>{product.name}</div>
+                          {product.sellerName && (
+                            <span className="text-[9px] font-medium text-neutral-400">Seller: {product.sellerName}</span>
+                          )}
+                        </td>
                         <td className="px-4 py-3 text-daraz-orange font-bold">{formatCurrency(product.price)}</td>
                         <td className="px-4 py-3">
                           <span className={cn(
@@ -635,6 +909,15 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
                           )}>
                             {product.stock} pcs
                           </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          {product.videoUrl ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-sm text-[9px] font-bold uppercase" title={product.videoUrl}>
+                              <VideoIcon size={10} /> Video
+                            </span>
+                          ) : (
+                            <span className="text-neutral-300 text-[10px] font-normal">None</span>
+                          )}
                         </td>
                         <td className="px-4 py-3 flex items-center gap-1">
                           <Clock size={12} className="text-neutral-400" /> {product.rating}
@@ -660,6 +943,295 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
                   </tbody>
                 </table>
                 </div>
+              </div>
+            ) : activeTab === 'import' ? (
+              <div className="space-y-8 text-left">
+                {/* Header banner */}
+                <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 rounded-sm p-6 text-white shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Sparkles size={20} className="text-amber-200 animate-spin" />
+                      <h2 className="text-xl font-black italic uppercase tracking-tighter">Instant Web Link Product Importer</h2>
+                    </div>
+                    <p className="text-xs text-amber-100 font-medium mt-1">
+                      Paste any product URL from <strong className="text-white underline">Flipkart</strong>, <strong className="text-white underline">Amazon</strong>, <strong className="text-white underline">Daraz</strong>, <strong className="text-white underline">Myntra</strong>, or <strong className="text-white underline">eBay</strong> to automatically extract image, specs, name, and pricing into your store inventory.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest shrink-0">
+                    <Globe size={12} className="text-amber-200" /> Multi-Store Platform Scraping
+                  </div>
+                </div>
+
+                {importSuccessMsg && (
+                  <div className="bg-green-50 border-2 border-green-200 text-green-700 p-4 rounded-sm text-xs font-bold flex items-center justify-between">
+                    <span>✓ {importSuccessMsg}</span>
+                    <button onClick={() => setImportSuccessMsg(null)} className="text-green-800 hover:underline text-[10px] uppercase font-black">Dismiss</button>
+                  </div>
+                )}
+
+                {/* Link Input Section */}
+                <div className="bg-neutral-50 p-6 rounded-sm border border-neutral-200 space-y-4">
+                  <label className="text-xs font-black uppercase tracking-wider text-neutral-700 block">
+                    Paste Any Product Web URL
+                  </label>
+
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="relative flex-1">
+                      <LinkIcon size={16} className="absolute left-3.5 top-3.5 text-neutral-400" />
+                      <input 
+                        type="url"
+                        value={importUrl}
+                        onChange={(e) => setImportUrl(e.target.value)}
+                        placeholder="e.g. https://www.flipkart.com/realme-buds-wireless-3/p/itm123456 or https://www.amazon.com/dp/B08N5WRWNW"
+                        className="w-full pl-10 pr-4 py-3 bg-white border border-neutral-300 rounded-sm text-xs font-medium outline-none focus:border-daraz-orange shadow-xs"
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={isImporting || !importUrl.trim()}
+                      onClick={() => handleFetchUrlProduct()}
+                      className="px-6 py-3 bg-daraz-orange hover:bg-orange-600 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-widest rounded-sm transition-all shadow-sm flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+                    >
+                      {isImporting ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          <span>Fetching Details...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles size={14} />
+                          <span>Fetch Product Data</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Quick Sample Presets */}
+                  <div className="pt-2">
+                    <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-2 flex items-center gap-1">
+                      <Sparkles size={12} className="text-amber-500" /> Or test with 1-click sample store links:
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleFetchUrlProduct('https://www.flipkart.com/realme-buds-wireless-3-bluetooth-headset/p/itm123456')}
+                        className="px-3 py-1.5 bg-white border border-blue-200 hover:bg-blue-50 text-blue-700 rounded-full text-[10px] font-bold uppercase transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+                      >
+                        <span className="w-2 h-2 rounded-full bg-blue-500" /> Flipkart Wireless Earbuds
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleFetchUrlProduct('https://www.amazon.com/dp/B08N5WRWNW/apple-watch-series-9-gps-45mm')}
+                        className="px-3 py-1.5 bg-white border border-amber-200 hover:bg-amber-50 text-amber-800 rounded-full text-[10px] font-bold uppercase transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+                      >
+                        <span className="w-2 h-2 rounded-full bg-amber-500" /> Amazon Smart Watch
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleFetchUrlProduct('https://www.daraz.com.np/products/womens-flat-sandal-half-close-new-i1234.html')}
+                        className="px-3 py-1.5 bg-white border border-orange-200 hover:bg-orange-50 text-daraz-orange rounded-full text-[10px] font-bold uppercase transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+                      >
+                        <span className="w-2 h-2 rounded-full bg-daraz-orange" /> Daraz Women Sandal
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleFetchUrlProduct('https://www.myntra.com/jackets/roadster/men-black-solid-biker-jacket/123456')}
+                        className="px-3 py-1.5 bg-white border border-rose-200 hover:bg-rose-50 text-rose-700 rounded-full text-[10px] font-bold uppercase transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+                      >
+                        <span className="w-2 h-2 rounded-full bg-rose-500" /> Myntra Biker Jacket
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Imported Product Editor Card */}
+                {importedProduct && (
+                  <div className="bg-white border-2 border-daraz-orange rounded-sm p-6 shadow-xl space-y-6 relative">
+                    <div className="flex justify-between items-center border-b pb-4 border-neutral-100">
+                      <div className="flex items-center gap-2">
+                        <span className="px-3 py-1 bg-amber-100 text-amber-800 text-[10px] font-black uppercase tracking-widest rounded-full">
+                          Source: {importedProduct.sourceDomain}
+                        </span>
+                        <h3 className="text-base font-black italic uppercase tracking-tight text-neutral-800">
+                          Imported Product Specs Preview & Editor
+                        </h3>
+                      </div>
+                      <button 
+                        onClick={() => setImportedProduct(null)}
+                        className="text-neutral-400 hover:text-neutral-600 p-1 cursor-pointer"
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                      {/* Left: Image & Video preview controls */}
+                      <div className="md:col-span-5 space-y-4">
+                        <div>
+                          <label className="text-[10px] font-bold uppercase text-neutral-400 block mb-1">Product Photo</label>
+                          <div className="aspect-square bg-neutral-100 rounded-sm border overflow-hidden relative group">
+                            <ProductImage src={importedProduct.image} alt={importedProduct.name} category={importedProduct.category} className="w-full h-full object-cover" />
+                          </div>
+                          <input 
+                            type="text"
+                            value={importedProduct.image}
+                            onChange={(e) => setImportedProduct({ ...importedProduct, image: e.target.value })}
+                            placeholder="Or paste custom image URL"
+                            className="w-full mt-2 p-2 bg-neutral-50 border border-neutral-200 rounded-sm text-[11px] outline-none focus:border-daraz-orange"
+                          />
+                          <div className="mt-2">
+                            <span className="text-[9px] font-bold uppercase text-neutral-400 block mb-1">Select Preset HD Photo:</span>
+                            <div className="flex flex-wrap gap-1">
+                              {PRESET_PRODUCT_IMAGES.map((preset) => (
+                                <button
+                                  key={preset.name}
+                                  type="button"
+                                  onClick={() => setImportedProduct({ ...importedProduct, image: preset.url })}
+                                  className="px-2 py-0.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded text-[9px] font-bold border border-neutral-200"
+                                >
+                                  {preset.name}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-bold uppercase text-neutral-400 block mb-1">
+                            Add Product Video (Optional MP4 file, YouTube link, or Preset Demo)
+                          </label>
+                          {importedProduct.videoUrl ? (
+                            <div className="aspect-video bg-black rounded-sm overflow-hidden relative border border-neutral-300">
+                              {(() => {
+                                const formatted = formatVideoEmbedUrl(importedProduct.videoUrl);
+                                return formatted.type === 'iframe' ? (
+                                  <iframe src={formatted.embedUrl} className="w-full h-full" title="Preview" allowFullScreen />
+                                ) : (
+                                  <video src={formatted.embedUrl} controls className="w-full h-full object-contain" />
+                                );
+                              })()}
+                              <button
+                                type="button"
+                                onClick={() => setImportedProduct({ ...importedProduct, videoUrl: '' })}
+                                className="absolute top-2 right-2 bg-red-600 text-white p-1 rounded-full text-xs shadow-md cursor-pointer"
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              <input 
+                                type="text"
+                                value={importedProduct.videoUrl || ''}
+                                onChange={(e) => setImportedProduct({ ...importedProduct, videoUrl: e.target.value })}
+                                placeholder="Paste YouTube / Vimeo / MP4 Video URL"
+                                className="w-full p-2 bg-neutral-50 border border-neutral-200 rounded-sm text-[11px] outline-none focus:border-daraz-orange"
+                              />
+                              <div className="flex flex-wrap gap-1">
+                                {PRESET_PRODUCT_VIDEOS.map((v) => (
+                                  <button
+                                    key={v.name}
+                                    type="button"
+                                    onClick={() => setImportedProduct({ ...importedProduct, videoUrl: v.url })}
+                                    className="px-2 py-0.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded text-[9px] font-bold flex items-center gap-1 cursor-pointer"
+                                  >
+                                    <VideoIcon size={10} /> {v.name}
+                                  </button>
+                                ))}
+                              </div>
+                              <label className="flex items-center justify-center gap-2 p-2.5 bg-neutral-100 hover:bg-neutral-200 border border-neutral-200 rounded-sm text-[10px] font-bold uppercase cursor-pointer transition-all">
+                                <VideoIcon size={14} className="text-daraz-orange" />
+                                <span>{videoProcessing ? 'Processing Video...' : 'Upload Local Product MP4 Video'}</span>
+                                <input type="file" accept="video/*" className="hidden" onChange={handleVideoUploadForImport} />
+                              </label>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Right: Product Details Edit Form */}
+                      <div className="md:col-span-7 space-y-4">
+                        <div>
+                          <label className="text-[10px] font-bold uppercase text-neutral-400">Product Name</label>
+                          <input 
+                            required
+                            type="text"
+                            value={importedProduct.name}
+                            onChange={(e) => setImportedProduct({ ...importedProduct, name: e.target.value })}
+                            className="w-full p-2.5 bg-neutral-50 border border-neutral-200 rounded-sm text-sm font-bold text-neutral-900 outline-none focus:border-daraz-orange mt-1"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-3">
+                          <div>
+                            <label className="text-[10px] font-bold uppercase text-neutral-400">Price (NPR)</label>
+                            <input 
+                              required
+                              type="number"
+                              value={importedProduct.price}
+                              onChange={(e) => setImportedProduct({ ...importedProduct, price: Number(e.target.value) })}
+                              className="w-full p-2 bg-neutral-50 border border-neutral-200 rounded-sm text-xs font-bold text-daraz-orange outline-none focus:border-daraz-orange mt-1"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold uppercase text-neutral-400">Stock Quantity</label>
+                            <input 
+                              required
+                              type="number"
+                              value={importedProduct.stock}
+                              onChange={(e) => setImportedProduct({ ...importedProduct, stock: Number(e.target.value) })}
+                              className="w-full p-2 bg-neutral-50 border border-neutral-200 rounded-sm text-xs font-bold text-neutral-900 outline-none focus:border-daraz-orange mt-1"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold uppercase text-neutral-400">Category</label>
+                            <select
+                              value={importedProduct.category}
+                              onChange={(e) => setImportedProduct({ ...importedProduct, category: e.target.value })}
+                              className="w-full p-2 bg-neutral-50 border border-neutral-200 rounded-sm text-xs font-bold text-neutral-900 outline-none focus:border-daraz-orange mt-1"
+                            >
+                              {CATEGORIES.map(c => (
+                                <option key={c.name} value={c.name}>{c.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-bold uppercase text-neutral-400">Description</label>
+                          <textarea 
+                            rows={4}
+                            value={importedProduct.description}
+                            onChange={(e) => setImportedProduct({ ...importedProduct, description: e.target.value })}
+                            className="w-full p-2.5 bg-neutral-50 border border-neutral-200 rounded-sm text-xs text-neutral-700 outline-none focus:border-daraz-orange mt-1 resize-none"
+                          />
+                        </div>
+
+                        <div className="pt-2">
+                          <button
+                            type="button"
+                            disabled={submitting}
+                            onClick={handlePublishImportedProduct}
+                            className="w-full py-4 bg-daraz-orange hover:bg-orange-600 disabled:opacity-50 text-white font-black text-xs uppercase tracking-widest rounded-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                          >
+                            {submitting ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                <span>Publishing Product...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Plus size={16} />
+                                <span>Publish Imported Product To Store</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 text-left">
@@ -1061,6 +1633,24 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
                     )}
                   </div>
                 </div>
+
+                <div className="col-span-2 space-y-2">
+                  <label className="text-[10px] font-bold uppercase text-neutral-400">Product Video (YouTube / MP4 Video File)</label>
+                  <div className="space-y-2">
+                    <input 
+                      type="text"
+                      value={editingProduct.videoUrl || ''}
+                      onChange={e => setEditingProduct({...editingProduct, videoUrl: e.target.value})}
+                      placeholder="Paste YouTube or MP4 Video Link"
+                      className="w-full bg-neutral-50 border border-neutral-200 p-2 text-xs outline-none focus:border-blue-500 rounded-sm"
+                    />
+                    <label className="flex items-center justify-center gap-2 p-2 bg-neutral-100 hover:bg-neutral-200 border border-neutral-200 rounded-sm text-[10px] font-bold uppercase cursor-pointer transition-all">
+                      <VideoIcon size={14} className="text-blue-600" />
+                      <span>{videoProcessing ? 'Uploading Video...' : 'Upload Video File'}</span>
+                      <input type="file" accept="video/*" className="hidden" onChange={handleVideoUploadForEdit} />
+                    </label>
+                  </div>
+                </div>
               </div>
               <div className="flex gap-4 pt-4">
                 <button 
@@ -1161,6 +1751,24 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
                         <input type="file" className="hidden" accept="image/*" required={!newProduct.image} onChange={(e) => handleImageUpload(e, false)} />
                       </label>
                     )}
+                  </div>
+                </div>
+
+                <div className="col-span-2 space-y-2">
+                  <label className="text-[10px] font-bold uppercase text-neutral-400">Product Video (YouTube / MP4 Video File)</label>
+                  <div className="space-y-2">
+                    <input 
+                      type="text"
+                      value={newProduct.videoUrl || ''}
+                      onChange={e => setNewProduct({...newProduct, videoUrl: e.target.value})}
+                      placeholder="Paste YouTube or MP4 Video Link"
+                      className="w-full bg-neutral-50 border border-neutral-200 p-2 text-xs outline-none focus:border-daraz-orange rounded-sm"
+                    />
+                    <label className="flex items-center justify-center gap-2 p-2 bg-neutral-100 hover:bg-neutral-200 border border-neutral-200 rounded-sm text-[10px] font-bold uppercase cursor-pointer transition-all">
+                      <VideoIcon size={14} className="text-daraz-orange" />
+                      <span>{videoProcessing ? 'Uploading Video...' : 'Upload Video File'}</span>
+                      <input type="file" accept="video/*" className="hidden" onChange={handleVideoUploadForNew} />
+                    </label>
                   </div>
                 </div>
               </div>
@@ -1290,6 +1898,46 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
                >
                 Mark as Delivered
                </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete All Products Confirmation Modal */}
+      {showDeleteAllConfirmModal && (
+        <div className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 text-left">
+          <div className="bg-white w-full max-w-md rounded-sm shadow-2xl p-6 space-y-4">
+            <div className="flex items-center gap-3 text-red-600">
+              <div className="p-3 bg-red-100 rounded-full">
+                <Trash2 size={24} />
+              </div>
+              <div>
+                <h3 className="text-base font-black uppercase tracking-tight">Delete All Products?</h3>
+                <p className="text-[10px] font-bold text-neutral-400 uppercase">Irreversible Action</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-neutral-600 font-medium leading-relaxed">
+              Are you sure you want to delete all <strong>{products.length}</strong> products from your store inventory? This will permanently wipe all items from your Firestore database catalog.
+            </p>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={() => setShowDeleteAllConfirmModal(false)}
+                className="flex-1 py-2.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-[10px] font-bold uppercase tracking-widest rounded-sm"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={handleDeleteAllProducts}
+                className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold uppercase tracking-widest rounded-sm shadow-sm flex items-center justify-center gap-2"
+              >
+                {submitting ? 'Deleting...' : 'Yes, Delete All'}
+              </button>
             </div>
           </div>
         </div>

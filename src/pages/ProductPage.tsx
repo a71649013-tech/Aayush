@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Star, ShieldCheck, Truck, RefreshCw, Send, User, Heart, Share2, MapPin, BadgeCheck, Store, Zap, Landmark, ChevronDown } from 'lucide-react';
+import { Star, ShieldCheck, Truck, RefreshCw, Send, User, Heart, Share2, MapPin, BadgeCheck, Store, Zap, Landmark, ChevronDown, Video, Play, Image as ImageIcon } from 'lucide-react';
 import { Product } from '../types';
 import { formatCurrency, cn } from '../lib/utils';
 import { motion } from 'motion/react';
 import { AdPlacement } from '../components/AdPlacement';
 import { NEPAL_CITIES } from '../constants';
 import { ProductImage } from '../components/ProductImage';
+import { formatVideoEmbedUrl } from '../lib/videoUtils';
 
 export default function ProductPage({ products, onAddToCart, onAddReview }: { 
   products: Product[], 
@@ -22,6 +23,7 @@ export default function ProductPage({ products, onAddToCart, onAddReview }: {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedCity, setSelectedCity] = useState('Kathmandu');
   const [isCitySelectorOpen, setIsCitySelectorOpen] = useState(false);
+  const [activeMedia, setActiveMedia] = useState<'photo' | 'video'>('photo');
 
   if (!product) return <div className="p-20 text-center">Product not found.</div>;
 
@@ -50,19 +52,89 @@ export default function ProductPage({ products, onAddToCart, onAddReview }: {
         </div>
 
         <div className="bg-white rounded-sm shadow-sm p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-12">
-          {/* Left: Image Gallery */}
-          <div className="lg:col-span-4 space-y-4">
-            <div className="aspect-square border border-neutral-100 overflow-hidden">
-              <ProductImage 
-                src={product.image} 
-                alt={product.name}
-                category={product.category}
-                className="w-full h-full object-contain" 
-              />
+          {/* Left: Image & Video Gallery */}
+          <div className="lg:col-span-4 space-y-3">
+            {/* Media Selector Tabs (if product has video) */}
+            {product.videoUrl && (
+              <div className="flex gap-2 p-1 bg-neutral-100 rounded-lg text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => setActiveMedia('photo')}
+                  className={cn(
+                    "flex-1 py-1.5 rounded-md flex items-center justify-center gap-1.5 transition-all",
+                    activeMedia === 'photo' ? "bg-white text-daraz-orange shadow-sm" : "text-neutral-600 hover:text-neutral-900"
+                  )}
+                >
+                  <ImageIcon size={14} />
+                  <span>Photo</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveMedia('video')}
+                  className={cn(
+                    "flex-1 py-1.5 rounded-md flex items-center justify-center gap-1.5 transition-all",
+                    activeMedia === 'video' ? "bg-daraz-orange text-white shadow-sm" : "text-neutral-600 hover:text-neutral-900"
+                  )}
+                >
+                  <Video size={14} />
+                  <span>Video Clip</span>
+                </button>
+              </div>
+            )}
+
+            <div className="aspect-square border border-neutral-100 rounded-sm overflow-hidden bg-neutral-50 relative flex items-center justify-center">
+              {activeMedia === 'video' && product.videoUrl ? (
+                (() => {
+                  const formatted = formatVideoEmbedUrl(product.videoUrl);
+                  return formatted.type === 'iframe' ? (
+                    <iframe 
+                      src={formatted.embedUrl} 
+                      className="w-full h-full"
+                      title="Product Video"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <video src={formatted.embedUrl} controls autoPlay className="w-full h-full object-contain bg-black" />
+                  );
+                })()
+              ) : (
+                <ProductImage 
+                  src={product.image} 
+                  alt={product.name}
+                  category={product.category}
+                  className="w-full h-full object-contain" 
+                />
+              )}
             </div>
+
             <div className="grid grid-cols-4 gap-2">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="aspect-square border border-neutral-100 cursor-pointer hover:border-daraz-orange">
+              <div 
+                onClick={() => setActiveMedia('photo')}
+                className={cn(
+                  "aspect-square border cursor-pointer overflow-hidden rounded-sm transition-all",
+                  activeMedia === 'photo' ? "border-daraz-orange ring-1 ring-daraz-orange" : "border-neutral-200 opacity-80"
+                )}
+              >
+                <ProductImage src={product.image} alt="" category={product.category} className="w-full h-full object-cover" />
+              </div>
+
+              {product.videoUrl && (
+                <div 
+                  onClick={() => setActiveMedia('video')}
+                  className={cn(
+                    "aspect-square border cursor-pointer overflow-hidden rounded-sm bg-neutral-900 flex flex-col items-center justify-center text-white relative transition-all",
+                    activeMedia === 'video' ? "border-daraz-orange ring-1 ring-daraz-orange" : "border-neutral-200 opacity-80"
+                  )}
+                >
+                  <Play size={18} className="text-amber-400" />
+                  <span className="text-[9px] font-bold uppercase mt-1">Video</span>
+                </div>
+              )}
+
+              {[...Array(product.videoUrl ? 2 : 3)].map((_, i) => (
+                <div key={i} className="aspect-square border border-neutral-100 cursor-pointer hover:border-daraz-orange overflow-hidden rounded-sm">
                   <ProductImage src={product.image} alt="" category={product.category} className="w-full h-full object-cover opacity-80" />
                 </div>
               ))}
@@ -235,7 +307,7 @@ export default function ProductPage({ products, onAddToCart, onAddReview }: {
                       <Store size={20} className="text-daraz-orange" />
                    </div>
                    <div>
-                      <p className="text-xs font-bold text-neutral-800 uppercase tracking-tight">Official Marketplace</p>
+                      <p className="text-xs font-bold text-neutral-800 uppercase tracking-tight">{product.sellerName || 'Official Marketplace'}</p>
                       <button className="text-[10px] text-blue-500 font-bold uppercase hover:underline">Chat with Seller</button>
                    </div>
                 </div>

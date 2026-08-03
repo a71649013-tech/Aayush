@@ -13,15 +13,52 @@ export function ProductImage({
   category,
   className = "w-full h-full object-cover"
 }: ProductImageProps) {
-  const [hasError, setHasError] = useState(false);
+  const [currentSrc, setCurrentSrc] = useState<string | null>(src || null);
+  const [attempt, setAttempt] = useState<number>(0);
 
   useEffect(() => {
-    setHasError(false);
+    setCurrentSrc(src || null);
+    setAttempt(0);
   }, [src]);
 
-  const hasNoImage = !src || src.trim() === '';
+  const getCategoryFallback = (catName?: string, titleName?: string) => {
+    const combined = `${catName || ''} ${titleName || ''}`.toLowerCase();
+    if (combined.includes('watch') || combined.includes('smartwatch')) {
+      return 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=800';
+    }
+    if (combined.includes('earbud') || combined.includes('headphone') || combined.includes('buds') || combined.includes('audio')) {
+      return 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=800';
+    }
+    if (combined.includes('phone') || combined.includes('mobile') || combined.includes('electronic') || combined.includes('gadget')) {
+      return 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&q=80&w=800';
+    }
+    if (combined.includes('sandal') || combined.includes('shoe') || combined.includes('footwear')) {
+      return 'https://images.unsplash.com/photo-1543163521-1bf539c55dd2?auto=format&fit=crop&q=80&w=800';
+    }
+    if (combined.includes('fashion') || combined.includes('dress') || combined.includes('shirt') || combined.includes('cloth')) {
+      return 'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&q=80&w=800';
+    }
+    if (combined.includes('beauty') || combined.includes('makeup') || combined.includes('cosmetic')) {
+      return 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&q=80&w=800';
+    }
+    return 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&q=80&w=800';
+  };
 
-  // Helper to extract initials based on product name
+  const handleError = () => {
+    if (attempt === 0) {
+      // First error: Try category-based high-quality Unsplash image fallback
+      const fallback = getCategoryFallback(category, alt);
+      if (fallback !== currentSrc) {
+        setCurrentSrc(fallback);
+        setAttempt(1);
+        return;
+      }
+    }
+    // Final error: set currentSrc to null to render initials placeholder
+    setCurrentSrc(null);
+    setAttempt(2);
+  };
+
   const getInitials = (name: string) => {
     if (!name) return 'NP';
     const clean = name.replace(/[^a-zA-Z0-9\s]/g, '').trim();
@@ -34,8 +71,7 @@ export function ProductImage({
 
   const initials = getInitials(alt || category || 'Product');
 
-  if (hasNoImage || hasError) {
-    // Generate a beautiful, premium, brand-colored (orange) placeholder displaying the product name
+  if (!currentSrc || currentSrc.trim() === '') {
     return (
       <div 
         className={`flex flex-col items-center justify-center bg-gradient-to-br from-[#F57224] to-[#f78f3f] text-white p-4 text-center select-none font-sans ${className}`}
@@ -56,10 +92,10 @@ export function ProductImage({
 
   return (
     <img
-      src={src}
+      src={currentSrc}
       alt={alt}
       className={className}
-      onError={() => setHasError(true)}
+      onError={handleError}
       referrerPolicy="no-referrer"
     />
   );

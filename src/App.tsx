@@ -27,6 +27,7 @@ import AdminLoginPage from './pages/AdminLoginPage';
 import AdminDashboard from './pages/AdminDashboard';
 import MobileBottomNav from './components/MobileBottomNav';
 import NotificationToast from './components/NotificationToast';
+import FloatingMerchantPortal from './components/FloatingMerchantPortal';
 import { productService } from './services/productService';
 import { initUnityAds } from './services/unityAdsService';
 import { CartItem, Product } from './types';
@@ -130,6 +131,7 @@ export default function App() {
                   onAddProduct={(p) => productService.addProduct(p)}
                   onUpdateProduct={(id, updates) => productService.updateProduct(id, updates)}
                   onDeleteProduct={(id) => productService.deleteProduct(id)}
+                  onDeleteAllProducts={() => productService.deleteAllProducts()}
                 />
               } 
             />
@@ -138,6 +140,7 @@ export default function App() {
         
         <Footer />
         <MobileBottomNav cartCount={cartCount} />
+        <FloatingMerchantPortal products={products} />
       </div>
     </Router>
   );
