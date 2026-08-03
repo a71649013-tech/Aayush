@@ -914,17 +914,27 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
                         "text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-sm shrink-0",
                         nativePermission === 'granted' ? "bg-green-50 text-green-600 border border-green-100" :
                         nativePermission === 'denied' ? "bg-red-50 text-red-500 border border-red-100" :
-                        "bg-orange-50 text-daraz-orange border border-orange-100"
+                        "bg-amber-50 text-amber-700 border border-amber-200"
                       )}>
-                        {nativePermission === 'granted' ? '● AUTHORIZED' :
-                         nativePermission === 'denied' ? '✖ BLOCKED' :
-                         nativePermission === 'unsupported' ? '⚠ UNSUPPORTED' :
+                        {nativePermission === 'granted' ? '● OS AUTHORIZED' :
+                         nativePermission === 'denied' ? '✖ OS BLOCKED' :
+                         nativePermission === 'unsupported' ? '⚠ OS UNSUPPORTED' :
                          '● DEFAULTS'}
                       </span>
                     </div>
                     
                     <p className="text-[9px] text-neutral-500 leading-relaxed font-semibold">
-                      Enable real-time push alerts to receive immediate system alarms both inside the workspace and natively on your device desktop.
+                      Enable real-time push alerts to receive system alarms.
+                      {nativePermission === 'unsupported' && (
+                        <span className="block mt-1 text-amber-700 bg-amber-50 p-1.5 rounded-sm border border-amber-200 font-bold">
+                          Note: OS System Popups are unsupported in mobile WebView / iframe previews. In-App push banners & audio chimes are fully ACTIVE and working for all users!
+                        </span>
+                      )}
+                      {nativePermission === 'denied' && (
+                        <span className="block mt-1 text-red-600 bg-red-50 p-1.5 rounded-sm border border-red-200 font-bold">
+                          Note: Browser OS popups are blocked in browser site permissions. In-App push banners & audio chimes remain fully functional.
+                        </span>
+                      )}
                     </p>
 
                     <div className="flex gap-2">

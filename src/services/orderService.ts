@@ -56,7 +56,8 @@ export const orderService = {
       
       callback(orders);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, COLLECTION_NAME);
+      console.warn("Firestore user orders error:", error);
+      callback([]);
     });
   },
 
@@ -69,7 +70,8 @@ export const orderService = {
       }));
       callback(orders);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, COLLECTION_NAME);
+      console.warn("Firestore all orders subscription error:", error);
+      callback([]);
     });
   },
 

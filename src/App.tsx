@@ -30,6 +30,7 @@ import NotificationToast from './components/NotificationToast';
 import FloatingMerchantPortal from './components/FloatingMerchantPortal';
 import { productService } from './services/productService';
 import { initUnityAds } from './services/unityAdsService';
+import { initOneSignal } from './lib/notifications';
 import { CartItem, Product } from './types';
 
 export default function App() {
@@ -38,8 +39,9 @@ export default function App() {
   const { user, loading, connectionError } = useFirebase();
 
   useEffect(() => {
-    // Initialize Unity Ads
+    // Initialize Unity Ads & OneSignal
     initUnityAds();
+    initOneSignal("8b3ebad9-18c4-408a-9a9e-dfe9f9c76663");
 
     // Subscribe
     const unsubscribe = productService.subscribeToProducts((fetched) => {

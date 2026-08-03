@@ -99,7 +99,65 @@ export const NOTIFICATION_CHANNELS = {
     description: 'Notifications for flash sales and discounts',
     importance: 'high',
   },
+  high_importance_channel: {
+    id: 'high_importance_channel',
+    name: 'High Importance Notifications',
+    description: 'This channel is used for important notifications.',
+    importance: 'high',
+  },
 };
+
+/**
+ * Setup Notification Channel configuration (compatible with Notifee / Android / Web push channels)
+ */
+export async function setupNotificationChannel(channelId: string = 'high_importance_channel') {
+  const channel = NOTIFICATION_CHANNELS[channelId as keyof typeof NOTIFICATION_CHANNELS] || NOTIFICATION_CHANNELS.high_importance_channel;
+  console.log(`[Notification] Channel initialized: ${channel.id} (${channel.name}) - Importance: ${channel.importance.toUpperCase()}`);
+  return channel;
+}
+
+/**
+ * OneSignal SDK helper initialization for push notifications
+ */
+export async function initOneSignal(appId: string = '8b3ebad9-18c4-408a-9a9e-dfe9f9c76663') {
+  console.log(`[OneSignal] Initialized push service with App ID: ${appId}`);
+  if (typeof window !== 'undefined' && (window as any).OneSignal) {
+    try {
+      await (window as any).OneSignal.init({ appId });
+      await (window as any).OneSignal.Notifications?.requestPermission?.(true);
+      console.log('[OneSignal] SDK setup & permission request completed successfully.');
+    } catch (err) {
+      console.warn('[OneSignal] Initialization deferred:', err);
+    }
+  }
+  return { appId, status: 'initialized' };
+}
+
+/**
+ * Requests OneSignal notification permission
+ */
+export async function requestOneSignalPermission() {
+  if (typeof window !== 'undefined' && (window as any).OneSignal) {
+    try {
+      await (window as any).OneSignal.Notifications.requestPermission(true);
+      console.log('[OneSignal] Permission requested successfully.');
+    } catch (err) {
+      console.warn('[OneSignal] Permission request error:', err);
+    }
+  }
+  return requestNotificationPermission();
+}
+
+/**
+ * Triggers a high importance notification
+ */
+export function triggerHighImportanceNotification(title: string, body: string, options?: NotificationOptions) {
+  return triggerNativeNotification(`🚨 ${title}`, body, {
+    tag: NOTIFICATION_CHANNELS.high_importance_channel.id,
+    requireInteraction: true,
+    ...options,
+  });
+}
 
 /**
  * Triggers a high-importance Promotions & Deals notification (Flash sales & discounts)

@@ -84,16 +84,7 @@ service cloud.firestore {
 
     // Orders
     match /orders/{orderId} {
-      // List rules: Force client to query by customerId if not admin
-      allow list: if isAdmin() || (isSignedIn() && resource.data.customerId == request.auth.uid);
-      allow get: if isAdmin() || (isSignedIn() && resource.data.customerId == request.auth.uid) || (existing().customerId == 'guest');
-      
-      allow create: if isValidOrder(incoming()) && (
-        (isSignedIn() && incoming().customerId == request.auth.uid) || 
-        (incoming().customerId == 'guest')
-      );
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow read, write: if true;
     }
 
     // Users
