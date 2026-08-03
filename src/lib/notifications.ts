@@ -136,11 +136,11 @@ export async function initOneSignal(appId: string = '8b3ebad9-18c4-408a-9a9e-dfe
 /**
  * Requests OneSignal notification permission
  */
-export async function requestOneSignalPermission() {
+export async function requestOneSignalPermission(fallbackToSettings: boolean = true) {
   if (typeof window !== 'undefined' && (window as any).OneSignal) {
     try {
-      await (window as any).OneSignal.Notifications.requestPermission(true);
-      console.log('[OneSignal] Permission requested successfully.');
+      await (window as any).OneSignal.Notifications?.requestPermission?.(fallbackToSettings);
+      console.log('[OneSignal] Permission requested successfully with fallbackToSettings =', fallbackToSettings);
     } catch (err) {
       console.warn('[OneSignal] Permission request error:', err);
     }
