@@ -225,30 +225,9 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
     requestNotificationPermission, 
     dispatchNotification 
   } = useFirebase();
-  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'import' | 'messages'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'messages'>('orders');
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showDeleteAllConfirmModal, setShowDeleteAllConfirmModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-
-  const handleDeleteAllProducts = async () => {
-    try {
-      setSubmitting(true);
-      if (onDeleteAllProducts) {
-        await onDeleteAllProducts();
-      } else {
-        for (const p of products) {
-          await onDeleteProduct(p.id);
-        }
-      }
-      setShowDeleteAllConfirmModal(false);
-      dispatchNotification("All Products Wiped", "Store inventory has been completely cleared.", "promos");
-    } catch (err: any) {
-      console.error("Error clearing store inventory:", err);
-      alert(err?.message || "Failed to delete all products.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
   const [orders, setOrders] = useState<any[]>([]);
   const [compressing, setCompressing] = useState(false);
   const [videoProcessing, setVideoProcessing] = useState(false);
@@ -473,7 +452,9 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
         videoUrl: newProduct.videoUrl ? newProduct.videoUrl.trim() : undefined,
         sellerId: user?.id || 'admin',
         sellerName: user?.name || 'Administrator',
-        status: 'active'
+        status: 'active',
+        addedByAdmin: true,
+        addedViaMerchantPortal: false
       });
       setShowAddModal(false);
       setNewProduct({
@@ -703,13 +684,6 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
               <MessageSquare size={14} className="text-white animate-pulse" /> Send Alert / Direct Message
             </button>
             <button 
-              onClick={handleDeleteAllProducts}
-              className="px-6 py-3 border-2 border-red-200 bg-red-50 text-red-600 text-[10px] font-bold uppercase tracking-widest hover:bg-red-100 flex items-center gap-2 group transition-all rounded-sm shadow-sm"
-              title="Delete all products from the database"
-            >
-              <Trash2 size={14} className="text-red-500 group-hover:scale-110 transition-transform" /> Delete All Products
-            </button>
-            <button 
               onClick={handleQuickSeed}
               className="px-6 py-3 border border-neutral-200 bg-white text-neutral-400 text-[10px] font-bold uppercase tracking-widest hover:bg-neutral-50 flex items-center gap-2 group transition-all rounded-sm shadow-sm"
             >
@@ -770,16 +744,6 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
               )}
             >
               Product Management
-            </button>
-            <button 
-              onClick={() => setActiveTab('import')}
-              className={cn(
-                "px-8 py-4 text-xs font-bold uppercase tracking-widest transition-all border-b-2 shrink-0 flex items-center gap-2",
-                activeTab === 'import' ? "border-daraz-orange text-daraz-orange" : "border-transparent text-neutral-400 hover:text-neutral-600"
-              )}
-            >
-              <LinkIcon size={14} className="text-amber-500" />
-              Import via Link (Flipkart/Amazon)
             </button>
             <button 
               onClick={() => setActiveTab('messages')}
@@ -851,23 +815,9 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                   <div>
                     <h3 className="text-sm font-bold uppercase tracking-tight italic">Inventory Overview</h3>
-                    <p className="text-[10px] text-neutral-400 font-medium">Manage existing items or import directly from external store links</p>
+                    <p className="text-[10px] text-neutral-400 font-medium">Manage existing items in store inventory</p>
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
-                    {products.length > 0 && (
-                      <button 
-                        onClick={() => setShowDeleteAllConfirmModal(true)}
-                        className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-sm text-[10px] font-bold uppercase tracking-widest transition-all active:scale-95 flex items-center gap-1.5 shadow-sm cursor-pointer"
-                      >
-                        <Trash2 size={12} /> Delete All Products ({products.length})
-                      </button>
-                    )}
-                    <button 
-                      onClick={() => setActiveTab('import')}
-                      className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-sm text-[10px] font-bold uppercase tracking-widest transition-all active:scale-95 flex items-center gap-1.5 shadow-sm cursor-pointer"
-                    >
-                      <LinkIcon size={12} /> Import from Link
-                    </button>
                     <button 
                       onClick={() => setShowAddModal(true)}
                       className="bg-daraz-orange text-white px-4 py-2 rounded-sm text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all active:scale-95 flex items-center gap-1 shadow-sm cursor-pointer"
@@ -943,295 +893,6 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
                   </tbody>
                 </table>
                 </div>
-              </div>
-            ) : activeTab === 'import' ? (
-              <div className="space-y-8 text-left">
-                {/* Header banner */}
-                <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 rounded-sm p-6 text-white shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <Sparkles size={20} className="text-amber-200 animate-spin" />
-                      <h2 className="text-xl font-black italic uppercase tracking-tighter">Instant Web Link Product Importer</h2>
-                    </div>
-                    <p className="text-xs text-amber-100 font-medium mt-1">
-                      Paste any product URL from <strong className="text-white underline">Flipkart</strong>, <strong className="text-white underline">Amazon</strong>, <strong className="text-white underline">Daraz</strong>, <strong className="text-white underline">Myntra</strong>, or <strong className="text-white underline">eBay</strong> to automatically extract image, specs, name, and pricing into your store inventory.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest shrink-0">
-                    <Globe size={12} className="text-amber-200" /> Multi-Store Platform Scraping
-                  </div>
-                </div>
-
-                {importSuccessMsg && (
-                  <div className="bg-green-50 border-2 border-green-200 text-green-700 p-4 rounded-sm text-xs font-bold flex items-center justify-between">
-                    <span>✓ {importSuccessMsg}</span>
-                    <button onClick={() => setImportSuccessMsg(null)} className="text-green-800 hover:underline text-[10px] uppercase font-black">Dismiss</button>
-                  </div>
-                )}
-
-                {/* Link Input Section */}
-                <div className="bg-neutral-50 p-6 rounded-sm border border-neutral-200 space-y-4">
-                  <label className="text-xs font-black uppercase tracking-wider text-neutral-700 block">
-                    Paste Any Product Web URL
-                  </label>
-
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <div className="relative flex-1">
-                      <LinkIcon size={16} className="absolute left-3.5 top-3.5 text-neutral-400" />
-                      <input 
-                        type="url"
-                        value={importUrl}
-                        onChange={(e) => setImportUrl(e.target.value)}
-                        placeholder="e.g. https://www.flipkart.com/realme-buds-wireless-3/p/itm123456 or https://www.amazon.com/dp/B08N5WRWNW"
-                        className="w-full pl-10 pr-4 py-3 bg-white border border-neutral-300 rounded-sm text-xs font-medium outline-none focus:border-daraz-orange shadow-xs"
-                      />
-                    </div>
-
-                    <button
-                      type="button"
-                      disabled={isImporting || !importUrl.trim()}
-                      onClick={() => handleFetchUrlProduct()}
-                      className="px-6 py-3 bg-daraz-orange hover:bg-orange-600 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-widest rounded-sm transition-all shadow-sm flex items-center justify-center gap-2 shrink-0 cursor-pointer"
-                    >
-                      {isImporting ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          <span>Fetching Details...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles size={14} />
-                          <span>Fetch Product Data</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-
-                  {/* Quick Sample Presets */}
-                  <div className="pt-2">
-                    <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-2 flex items-center gap-1">
-                      <Sparkles size={12} className="text-amber-500" /> Or test with 1-click sample store links:
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleFetchUrlProduct('https://www.flipkart.com/realme-buds-wireless-3-bluetooth-headset/p/itm123456')}
-                        className="px-3 py-1.5 bg-white border border-blue-200 hover:bg-blue-50 text-blue-700 rounded-full text-[10px] font-bold uppercase transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
-                      >
-                        <span className="w-2 h-2 rounded-full bg-blue-500" /> Flipkart Wireless Earbuds
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleFetchUrlProduct('https://www.amazon.com/dp/B08N5WRWNW/apple-watch-series-9-gps-45mm')}
-                        className="px-3 py-1.5 bg-white border border-amber-200 hover:bg-amber-50 text-amber-800 rounded-full text-[10px] font-bold uppercase transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
-                      >
-                        <span className="w-2 h-2 rounded-full bg-amber-500" /> Amazon Smart Watch
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleFetchUrlProduct('https://www.daraz.com.np/products/womens-flat-sandal-half-close-new-i1234.html')}
-                        className="px-3 py-1.5 bg-white border border-orange-200 hover:bg-orange-50 text-daraz-orange rounded-full text-[10px] font-bold uppercase transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
-                      >
-                        <span className="w-2 h-2 rounded-full bg-daraz-orange" /> Daraz Women Sandal
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleFetchUrlProduct('https://www.myntra.com/jackets/roadster/men-black-solid-biker-jacket/123456')}
-                        className="px-3 py-1.5 bg-white border border-rose-200 hover:bg-rose-50 text-rose-700 rounded-full text-[10px] font-bold uppercase transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
-                      >
-                        <span className="w-2 h-2 rounded-full bg-rose-500" /> Myntra Biker Jacket
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Imported Product Editor Card */}
-                {importedProduct && (
-                  <div className="bg-white border-2 border-daraz-orange rounded-sm p-6 shadow-xl space-y-6 relative">
-                    <div className="flex justify-between items-center border-b pb-4 border-neutral-100">
-                      <div className="flex items-center gap-2">
-                        <span className="px-3 py-1 bg-amber-100 text-amber-800 text-[10px] font-black uppercase tracking-widest rounded-full">
-                          Source: {importedProduct.sourceDomain}
-                        </span>
-                        <h3 className="text-base font-black italic uppercase tracking-tight text-neutral-800">
-                          Imported Product Specs Preview & Editor
-                        </h3>
-                      </div>
-                      <button 
-                        onClick={() => setImportedProduct(null)}
-                        className="text-neutral-400 hover:text-neutral-600 p-1 cursor-pointer"
-                      >
-                        <X size={18} />
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                      {/* Left: Image & Video preview controls */}
-                      <div className="md:col-span-5 space-y-4">
-                        <div>
-                          <label className="text-[10px] font-bold uppercase text-neutral-400 block mb-1">Product Photo</label>
-                          <div className="aspect-square bg-neutral-100 rounded-sm border overflow-hidden relative group">
-                            <ProductImage src={importedProduct.image} alt={importedProduct.name} category={importedProduct.category} className="w-full h-full object-cover" />
-                          </div>
-                          <input 
-                            type="text"
-                            value={importedProduct.image}
-                            onChange={(e) => setImportedProduct({ ...importedProduct, image: e.target.value })}
-                            placeholder="Or paste custom image URL"
-                            className="w-full mt-2 p-2 bg-neutral-50 border border-neutral-200 rounded-sm text-[11px] outline-none focus:border-daraz-orange"
-                          />
-                          <div className="mt-2">
-                            <span className="text-[9px] font-bold uppercase text-neutral-400 block mb-1">Select Preset HD Photo:</span>
-                            <div className="flex flex-wrap gap-1">
-                              {PRESET_PRODUCT_IMAGES.map((preset) => (
-                                <button
-                                  key={preset.name}
-                                  type="button"
-                                  onClick={() => setImportedProduct({ ...importedProduct, image: preset.url })}
-                                  className="px-2 py-0.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded text-[9px] font-bold border border-neutral-200"
-                                >
-                                  {preset.name}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="text-[10px] font-bold uppercase text-neutral-400 block mb-1">
-                            Add Product Video (Optional MP4 file, YouTube link, or Preset Demo)
-                          </label>
-                          {importedProduct.videoUrl ? (
-                            <div className="aspect-video bg-black rounded-sm overflow-hidden relative border border-neutral-300">
-                              {(() => {
-                                const formatted = formatVideoEmbedUrl(importedProduct.videoUrl);
-                                return formatted.type === 'iframe' ? (
-                                  <iframe src={formatted.embedUrl} className="w-full h-full" title="Preview" allowFullScreen />
-                                ) : (
-                                  <video src={formatted.embedUrl} controls className="w-full h-full object-contain" />
-                                );
-                              })()}
-                              <button
-                                type="button"
-                                onClick={() => setImportedProduct({ ...importedProduct, videoUrl: '' })}
-                                className="absolute top-2 right-2 bg-red-600 text-white p-1 rounded-full text-xs shadow-md cursor-pointer"
-                              >
-                                <X size={14} />
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="space-y-2">
-                              <input 
-                                type="text"
-                                value={importedProduct.videoUrl || ''}
-                                onChange={(e) => setImportedProduct({ ...importedProduct, videoUrl: e.target.value })}
-                                placeholder="Paste YouTube / Vimeo / MP4 Video URL"
-                                className="w-full p-2 bg-neutral-50 border border-neutral-200 rounded-sm text-[11px] outline-none focus:border-daraz-orange"
-                              />
-                              <div className="flex flex-wrap gap-1">
-                                {PRESET_PRODUCT_VIDEOS.map((v) => (
-                                  <button
-                                    key={v.name}
-                                    type="button"
-                                    onClick={() => setImportedProduct({ ...importedProduct, videoUrl: v.url })}
-                                    className="px-2 py-0.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded text-[9px] font-bold flex items-center gap-1 cursor-pointer"
-                                  >
-                                    <VideoIcon size={10} /> {v.name}
-                                  </button>
-                                ))}
-                              </div>
-                              <label className="flex items-center justify-center gap-2 p-2.5 bg-neutral-100 hover:bg-neutral-200 border border-neutral-200 rounded-sm text-[10px] font-bold uppercase cursor-pointer transition-all">
-                                <VideoIcon size={14} className="text-daraz-orange" />
-                                <span>{videoProcessing ? 'Processing Video...' : 'Upload Local Product MP4 Video'}</span>
-                                <input type="file" accept="video/*" className="hidden" onChange={handleVideoUploadForImport} />
-                              </label>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Right: Product Details Edit Form */}
-                      <div className="md:col-span-7 space-y-4">
-                        <div>
-                          <label className="text-[10px] font-bold uppercase text-neutral-400">Product Name</label>
-                          <input 
-                            required
-                            type="text"
-                            value={importedProduct.name}
-                            onChange={(e) => setImportedProduct({ ...importedProduct, name: e.target.value })}
-                            className="w-full p-2.5 bg-neutral-50 border border-neutral-200 rounded-sm text-sm font-bold text-neutral-900 outline-none focus:border-daraz-orange mt-1"
-                          />
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-3">
-                          <div>
-                            <label className="text-[10px] font-bold uppercase text-neutral-400">Price (NPR)</label>
-                            <input 
-                              required
-                              type="number"
-                              value={importedProduct.price}
-                              onChange={(e) => setImportedProduct({ ...importedProduct, price: Number(e.target.value) })}
-                              className="w-full p-2 bg-neutral-50 border border-neutral-200 rounded-sm text-xs font-bold text-daraz-orange outline-none focus:border-daraz-orange mt-1"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-[10px] font-bold uppercase text-neutral-400">Stock Quantity</label>
-                            <input 
-                              required
-                              type="number"
-                              value={importedProduct.stock}
-                              onChange={(e) => setImportedProduct({ ...importedProduct, stock: Number(e.target.value) })}
-                              className="w-full p-2 bg-neutral-50 border border-neutral-200 rounded-sm text-xs font-bold text-neutral-900 outline-none focus:border-daraz-orange mt-1"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-[10px] font-bold uppercase text-neutral-400">Category</label>
-                            <select
-                              value={importedProduct.category}
-                              onChange={(e) => setImportedProduct({ ...importedProduct, category: e.target.value })}
-                              className="w-full p-2 bg-neutral-50 border border-neutral-200 rounded-sm text-xs font-bold text-neutral-900 outline-none focus:border-daraz-orange mt-1"
-                            >
-                              {CATEGORIES.map(c => (
-                                <option key={c.name} value={c.name}>{c.name}</option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="text-[10px] font-bold uppercase text-neutral-400">Description</label>
-                          <textarea 
-                            rows={4}
-                            value={importedProduct.description}
-                            onChange={(e) => setImportedProduct({ ...importedProduct, description: e.target.value })}
-                            className="w-full p-2.5 bg-neutral-50 border border-neutral-200 rounded-sm text-xs text-neutral-700 outline-none focus:border-daraz-orange mt-1 resize-none"
-                          />
-                        </div>
-
-                        <div className="pt-2">
-                          <button
-                            type="button"
-                            disabled={submitting}
-                            onClick={handlePublishImportedProduct}
-                            className="w-full py-4 bg-daraz-orange hover:bg-orange-600 disabled:opacity-50 text-white font-black text-xs uppercase tracking-widest rounded-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
-                          >
-                            {submitting ? (
-                              <>
-                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                <span>Publishing Product...</span>
-                              </>
-                            ) : (
-                              <>
-                                <Plus size={16} />
-                                <span>Publish Imported Product To Store</span>
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 text-left">
@@ -1898,46 +1559,6 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
                >
                 Mark as Delivered
                </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete All Products Confirmation Modal */}
-      {showDeleteAllConfirmModal && (
-        <div className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 text-left">
-          <div className="bg-white w-full max-w-md rounded-sm shadow-2xl p-6 space-y-4">
-            <div className="flex items-center gap-3 text-red-600">
-              <div className="p-3 bg-red-100 rounded-full">
-                <Trash2 size={24} />
-              </div>
-              <div>
-                <h3 className="text-base font-black uppercase tracking-tight">Delete All Products?</h3>
-                <p className="text-[10px] font-bold text-neutral-400 uppercase">Irreversible Action</p>
-              </div>
-            </div>
-
-            <p className="text-xs text-neutral-600 font-medium leading-relaxed">
-              Are you sure you want to delete all <strong>{products.length}</strong> products from your store inventory? This will permanently wipe all items from your Firestore database catalog.
-            </p>
-
-            <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={() => setShowDeleteAllConfirmModal(false)}
-                className="flex-1 py-2.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-[10px] font-bold uppercase tracking-widest rounded-sm"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={handleDeleteAllProducts}
-                className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold uppercase tracking-widest rounded-sm shadow-sm flex items-center justify-center gap-2"
-              >
-                {submitting ? 'Deleting...' : 'Yes, Delete All'}
-              </button>
             </div>
           </div>
         </div>

@@ -142,8 +142,29 @@ export default function FloatingMerchantPortal({ products }: FloatingMerchantPor
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
 
-  // Filter seller/store products
+  // Filter seller/store products - ONLY show items added by merchants in the merchant portal
   const merchantProducts = products.filter(p => {
+    const isExplicitMerchantProduct = (p as any).addedViaMerchantPortal === true;
+    const isExplicitAdminProduct = (p as any).addedByAdmin === true;
+
+    // Exclude default seed products, admin dashboard products, and admin seller IDs/names
+    const isAdminOrSeedProduct = 
+      isExplicitAdminProduct ||
+      p.sellerId === 'seller-admin-999' || 
+      p.sellerId === 'admin' || 
+      p.sellerName === 'Nepali Mart Stores' || 
+      p.sellerName === 'Administrator' ||
+      p.id.startsWith('mart-product-');
+
+    if (isAdminOrSeedProduct && !isExplicitMerchantProduct) {
+      return false;
+    }
+
+    // Must be explicitly added via merchant portal
+    if (!isExplicitMerchantProduct) {
+      return false;
+    }
+
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase();
     return p.name.toLowerCase().includes(query) || p.category.toLowerCase().includes(query);
@@ -257,8 +278,9 @@ export default function FloatingMerchantPortal({ products }: FloatingMerchantPor
           stock: parseInt(formData.stock, 10) || 10,
           sellerId: user?.id || 'guest-seller',
           sellerName: formData.sellerName.trim() || user?.name || 'Local Merchant',
-          status: formData.status
-        });
+          status: formData.status,
+          addedViaMerchantPortal: true
+        } as any);
         
         setSuccessMsg('Product published successfully!');
         dispatchNotification('Product Listed!', `Your product "${formData.name}" is now live in the store.`, 'activities');
@@ -412,7 +434,7 @@ export default function FloatingMerchantPortal({ products }: FloatingMerchantPor
                   <Package size={14} />
                   <span>My Products</span>
                   <span className="text-[10px] bg-neutral-200 text-neutral-700 px-1.5 py-0.2 rounded-full font-extrabold ml-0.5">
-                    {products.length}
+                    {merchantProducts.length}
                   </span>
                 </button>
 

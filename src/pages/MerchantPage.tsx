@@ -240,7 +240,9 @@ export default function MerchantPage() {
         stock: Number(formData.stock),
         sellerId: user.id,
         sellerName: user.name,
-        status: 'active' // Products from merchants are auto-approved for instant list/speed
+        status: 'active', // Products from merchants are auto-approved for instant list/speed
+        addedViaMerchantPortal: true,
+        addedByAdmin: false
       });
       
       setSuccess(true);

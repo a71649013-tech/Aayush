@@ -51,6 +51,8 @@ export interface Product {
   sellerId?: string;
   sellerName?: string;
   status?: 'active' | 'pending' | 'rejected';
+  addedViaMerchantPortal?: boolean;
+  addedByAdmin?: boolean;
 }
 
 export interface CartItem extends Product {
