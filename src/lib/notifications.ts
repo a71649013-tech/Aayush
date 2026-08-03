@@ -46,6 +46,18 @@ export function playNotificationSound() {
 /**
  * Safely requests permission for native browser notifications
  */
+/**
+ * Safely requests permission for native browser notifications (callable on "ENABLE" button click)
+ */
+export async function requestNotificationPermission(): Promise<NotificationPermission> {
+  const status = await requestNativeNotificationPermission();
+  if (status === 'granted') {
+    playNotificationSound();
+    console.log("Notification Permission Granted!");
+  }
+  return status;
+}
+
 export async function requestNativeNotificationPermission(): Promise<NotificationPermission> {
   if (!('Notification' in window)) {
     console.warn("This browser does not support browser text notifications.");
@@ -78,9 +90,28 @@ export function getNativeNotificationStatus(): NotificationPermission | 'unsuppo
 }
 
 /**
- * Triggers a native system alert / push notification if permissions are granted.
- * Always attempts to play the chime sound in concert.
+ * Notification Channels configuration
  */
+export const NOTIFICATION_CHANNELS = {
+  promos_channel: {
+    id: 'promos_channel',
+    name: 'Promotions & Deals',
+    description: 'Notifications for flash sales and discounts',
+    importance: 'high',
+  },
+};
+
+/**
+ * Triggers a high-importance Promotions & Deals notification (Flash sales & discounts)
+ */
+export function triggerPromosNotification(title: string, body: string, options?: NotificationOptions) {
+  return triggerNativeNotification(`🔥 ${title}`, body, {
+    tag: NOTIFICATION_CHANNELS.promos_channel.id,
+    requireInteraction: true,
+    ...options,
+  });
+}
+
 export function triggerNativeNotification(title: string, body: string, options?: NotificationOptions) {
   playNotificationSound();
   
