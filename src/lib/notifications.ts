@@ -118,14 +118,21 @@ export async function setupNotificationChannel(channelId: string = 'high_importa
 
 /**
  * OneSignal SDK helper initialization for push notifications
+ * Android Native ApplicationClass binding:
+ * OneSignal.getDebug().setLogLevel(LogLevel.VERBOSE);
+ * OneSignal.initWithContext(this, "8b3ebad9-18c4-408a-9a9e-dfe9f9c76663");
+ * OneSignal.getNotifications().requestPermission(false, Continue.none());
  */
-export async function initOneSignal(appId: string = '8b3ebad9-18c4-408a-9a9e-dfe9f9c76663') {
+export async function initOneSignal(appId: string = '8b3ebad9-18c4-408a-9a9e-dfe9f9c76663', verbose: boolean = true) {
   console.log(`[OneSignal] Initialized push service with App ID: ${appId}`);
   if (typeof window !== 'undefined' && (window as any).OneSignal) {
     try {
+      if (verbose && (window as any).OneSignal.Debug) {
+        (window as any).OneSignal.Debug.setLogLevel('trace');
+      }
       await (window as any).OneSignal.init({ appId });
       await (window as any).OneSignal.Notifications?.requestPermission?.(true);
-      console.log('[OneSignal] SDK setup & permission request completed successfully.');
+      console.log('[OneSignal] SDK setup & permission request (fallbackToSettings: true) completed successfully.');
     } catch (err) {
       console.warn('[OneSignal] Initialization deferred:', err);
     }
