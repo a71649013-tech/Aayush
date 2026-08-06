@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, ShieldAlert, LogIn, Sparkles, HelpCircle } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { signInWithGoogle, loginWithEmail, registerWithEmail } from '../lib/firebase';
 import { useFirebase } from '../context/FirebaseContext';
 
 export default function LoginPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { loginAsLocalGuest } = useFirebase();
+
   const [formData, setFormData] = useState({
-    email: '',
+    email: (location.state as any)?.email || '',
     password: ''
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const { loginAsLocalGuest } = useFirebase();
-  const navigate = useNavigate();
 
   const handleGuestLogin = async () => {
     try {

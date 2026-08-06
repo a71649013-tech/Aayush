@@ -11,6 +11,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useFirebase } from './context/FirebaseContext';
+import ScrollToTop from './components/ScrollToTop';
 import Navbar from './components/Navbar';
 import { Footer } from './components/Footer';
 import HomePage from './pages/HomePage';
@@ -100,6 +101,7 @@ export default function App() {
 
   return (
     <Router>
+      <ScrollToTop />
       <NotificationToast />
       <div className="min-h-screen w-full bg-neutral-50 font-sans text-neutral-900 md:border-x md:border-neutral-200 max-w-7xl mx-auto md:shadow-2xl overflow-x-hidden relative flex flex-col">
         {connectionError && (

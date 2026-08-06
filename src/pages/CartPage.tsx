@@ -86,80 +86,71 @@ export default function CartPage({ cart, onRemove, onUpdateQuantity }: {
   const [showEsewaFlow, setShowEsewaFlow] = useState(false);
   const [mapApiFailed, setMapApiFailed] = useState(() => Boolean((window as any).__googleMapsAuthFailed));
   const [isLocating, setIsLocating] = useState(false);
-  const [locateStatus, setLocateStatus] = useState<string | null>(null);
 
   const handleLocateMe = () => {
-    if (!navigator.geolocation) {
-      setLocateStatus("⚠️ Geolocation is not supported by your browser.");
-      return;
-    }
+    if (!navigator.geolocation) return;
 
     setIsLocating(true);
-    setLocateStatus("📡 Fetching live GPS location...");
+
+    const onPositionSuccess = async (position: GeolocationPosition) => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      
+      let fetchedArea = address.area;
+      let fetchedDetails = `Live GPS Pin (${lat.toFixed(4)}°N, ${lng.toFixed(4)}°E)`;
+      let detectedCity = address.city;
+
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.address) {
+            const addr = data.address;
+            const road = addr.road || addr.pedestrian || addr.suburb || addr.neighbourhood || addr.amenity || '';
+            const city = addr.city || addr.town || addr.village || addr.municipality || address.city;
+            if (road) fetchedArea = road;
+            if (data.display_name) fetchedDetails = data.display_name.split(',').slice(0, 3).join(', ');
+            if (city) detectedCity = city;
+          }
+        }
+      } catch (err) {
+        console.warn("Reverse geocoding notice:", err);
+      }
+
+      setAddress(prev => ({
+        ...prev,
+        city: detectedCity,
+        latitude: lat,
+        longitude: lng,
+        hasPinned: true,
+        area: fetchedArea || prev.area || `${detectedCity} Location`,
+        details: fetchedDetails
+      }));
+
+      setIsLocating(false);
+    };
+
+    const fallbackToCityCenter = () => {
+      setIsLocating(false);
+      const cityCoords = CITY_COORDINATES[address.city] || CITY_COORDINATES['Birgunj'];
+      setAddress(prev => ({
+        ...prev,
+        latitude: cityCoords.lat,
+        longitude: cityCoords.lng,
+        hasPinned: true,
+        details: prev.details || `Center of ${prev.city} (${cityCoords.defaultArea})`
+      }));
+    };
 
     navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        
-        let fetchedArea = address.area;
-        let fetchedDetails = `Live GPS Pin (${lat.toFixed(4)}°N, ${lng.toFixed(4)}°E)`;
-        let detectedCity = address.city;
-
-        try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
-          if (res.ok) {
-            const data = await res.json();
-            if (data && data.address) {
-              const addr = data.address;
-              const road = addr.road || addr.pedestrian || addr.suburb || addr.neighbourhood || addr.amenity || '';
-              const city = addr.city || addr.town || addr.village || addr.municipality || address.city;
-              if (road) fetchedArea = road;
-              if (data.display_name) fetchedDetails = data.display_name.split(',').slice(0, 3).join(', ');
-              if (city) detectedCity = city;
-            }
-          }
-        } catch (err) {
-          console.warn("Reverse geocoding notice:", err);
-        }
-
-        setAddress(prev => ({
-          ...prev,
-          city: detectedCity,
-          latitude: lat,
-          longitude: lng,
-          hasPinned: true,
-          area: fetchedArea || prev.area || `${detectedCity} Location`,
-          details: fetchedDetails
-        }));
-
-        setIsLocating(false);
-        setLocateStatus("✅ GPS Location Pinpointed!");
-        setTimeout(() => setLocateStatus(null), 3500);
-      },
-      (error) => {
-        setIsLocating(false);
-        const cityCoords = CITY_COORDINATES[address.city] || CITY_COORDINATES['Birgunj'];
-        setAddress(prev => ({
-          ...prev,
-          latitude: cityCoords.lat,
-          longitude: cityCoords.lng,
-          hasPinned: true,
-          details: prev.details || `Center of ${prev.city} (${cityCoords.defaultArea})`
-        }));
-
-        if (error.code === error.PERMISSION_DENIED) {
-          setLocateStatus(`⚠️ GPS permission blocked. Set to ${address.city} center.`);
-        } else {
-          setLocateStatus(`⚠️ GPS timeout. Centered on ${address.city}.`);
-        }
-        setTimeout(() => setLocateStatus(null), 4000);
-      },
-      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+      onPositionSuccess,
+      fallbackToCityCenter,
+      { enableHighAccuracy: false, timeout: 6000, maximumAge: 30000 }
     );
   };
 
   React.useEffect(() => {
+    window.scrollTo(0, 0);
     const checkAuth = () => {
       if ((window as any).__googleMapsAuthFailed) {
         setMapApiFailed(true);
@@ -505,12 +496,6 @@ export default function CartPage({ cart, onRemove, onUpdateQuantity }: {
                       )}
                     </button>
                   </div>
-
-                  {locateStatus && (
-                    <div className="bg-amber-50 px-3 py-1.5 border-b border-amber-200 text-[10px] font-medium text-amber-900 flex items-center justify-between">
-                      <span>{locateStatus}</span>
-                    </div>
-                  )}
 
                   {/* actual Map rendering */}
                   {hasGoogleMapsKey && !mapApiFailed ? (

@@ -30,9 +30,8 @@ export default function RegisterPage() {
       await registerWithEmail(formData.email, formData.password, formData.name);
       navigate('/');
     } catch (err: any) {
-      console.error("Registration Error:", err);
       if (err.code === 'auth/email-already-in-use') {
-        setError('This email is already registered.');
+        setError('EMAIL_ALREADY_IN_USE');
       } else if (err.code === 'auth/operation-not-allowed') {
         setError('FIREBASE_OPERATION_NOT_ALLOWED');
       } else {
@@ -116,7 +115,33 @@ export default function RegisterPage() {
             </div>
 
             {error && (
-              error === 'FIREBASE_OPERATION_NOT_ALLOWED' ? (
+              error === 'EMAIL_ALREADY_IN_USE' ? (
+                <div className="bg-amber-50 border border-amber-200 rounded-sm p-4 text-left space-y-3 shadow-sm text-neutral-800">
+                  <div className="flex gap-2.5 items-start">
+                    <div className="p-1 h-fit bg-amber-100 rounded-full text-amber-600 mt-0.5">
+                      <HelpCircle size={18} />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black uppercase tracking-wider text-amber-950">
+                        Email Already Registered
+                      </h4>
+                      <p className="text-[11px] leading-relaxed text-amber-900 mt-1 font-medium">
+                        The email <strong>{formData.email}</strong> is already registered on Nepali Mart.
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="pt-2 border-t border-amber-200/60 flex flex-col gap-2">
+                    <button
+                      type="button"
+                      onClick={() => navigate('/login', { state: { email: formData.email } })}
+                      className="w-full bg-daraz-orange hover:opacity-90 text-white font-black uppercase text-[10px] tracking-widest py-2.5 rounded-sm text-center shadow transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      Log In To Your Account <ArrowRight size={14} />
+                    </button>
+                  </div>
+                </div>
+              ) : error === 'FIREBASE_OPERATION_NOT_ALLOWED' ? (
                 <div className="bg-amber-50/90 border border-amber-200 rounded-sm p-4 text-left space-y-3 shadow-sm select-text text-neutral-800">
                   <div className="flex gap-2.5">
                     <div className="p-1 h-fit bg-amber-100 rounded-full text-amber-600 mt-0.5">

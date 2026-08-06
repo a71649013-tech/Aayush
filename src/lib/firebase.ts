@@ -47,8 +47,10 @@ export const registerWithEmail = async (email: string, password: string, name: s
     const result = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(result.user, { displayName: name });
     return result.user;
-  } catch (error) {
-    console.error("Registration failed:", error);
+  } catch (error: any) {
+    if (error?.code !== 'auth/email-already-in-use') {
+      console.warn("Registration failed:", error?.message || error);
+    }
     throw error;
   }
 };
@@ -57,8 +59,10 @@ export const loginWithEmail = async (email: string, password: string) => {
   try {
     const result = await signInWithEmailAndPassword(auth, email, password);
     return result.user;
-  } catch (error) {
-    console.error("Login failed:", error);
+  } catch (error: any) {
+    if (error?.code !== 'auth/invalid-credential' && error?.code !== 'auth/user-not-found' && error?.code !== 'auth/wrong-password') {
+      console.warn("Login failed:", error?.message || error);
+    }
     throw error;
   }
 };
