@@ -1,12 +1,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Star, ShoppingCart, Zap, ShieldCheck, ChevronRight, Landmark, Truck, CreditCard, Headphones, Mail, ArrowRight, HelpCircle, ChevronDown, ChevronUp, Store, PlayCircle, Gift, Search, Sparkles, ShieldAlert } from 'lucide-react';
+import { Star, ShoppingCart, Zap, ShieldCheck, ChevronRight, Landmark, Truck, CreditCard, Headphones, Mail, ArrowRight, HelpCircle, ChevronDown, ChevronUp, Store, PlayCircle, Gift, Search, Sparkles, ShieldAlert, Share2 } from 'lucide-react';
 import { Product } from '../types';
 import { formatCurrency } from '../lib/utils';
 import { motion } from 'motion/react';
 import { AdPlacement } from '../components/AdPlacement';
 import { useFirebase } from '../context/FirebaseContext';
 import { ProductImage } from '../components/ProductImage';
+import ShareModal from '../components/ShareModal';
 
 import { CATEGORIES } from '../constants';
 
@@ -706,26 +707,43 @@ export default function HomePage({ products }: { products: Product[] }) {
 }
 
 function ProductCard({ product }: { product: Product }) {
+  const [isShareOpen, setIsShareOpen] = useState(false);
+
   return (
     <div className="bg-white rounded-xl overflow-hidden border border-neutral-100 hover:border-neutral-200 hover:shadow-xl transition-all h-full flex flex-col group relative">
-      <Link to={`/product/${product.id}`} className="block relative aspect-square overflow-hidden">
-        <ProductImage 
-          src={product.image} 
-          alt={product.name} 
-          category={product.category}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-        />
-        
-        {/* Brand Badge */}
-        <div className="absolute top-0 left-0 bg-red-600 text-white text-[10px] font-black px-1.5 py-1 rounded-br-sm shadow-lg flex flex-col items-center leading-none">
-           <span>NEPALI</span>
-           <span className="text-[7px] opacity-70">MART</span>
-        </div>
+      <div className="relative">
+        <Link to={`/product/${product.id}`} className="block aspect-square overflow-hidden">
+          <ProductImage 
+            src={product.image} 
+            alt={product.name} 
+            category={product.category}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          />
+          
+          {/* Brand Badge */}
+          <div className="absolute top-0 left-0 bg-red-600 text-white text-[10px] font-black px-1.5 py-1 rounded-br-sm shadow-lg flex flex-col items-center leading-none z-10">
+             <span>NEPALI</span>
+             <span className="text-[7px] opacity-70">MART</span>
+          </div>
 
-        <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/60 to-transparent p-2">
-           <span className="bg-daraz-orange text-white text-[8px] font-black px-2 py-0.5 rounded-sm uppercase italic shadow-sm">Official Store</span>
-        </div>
-      </Link>
+          <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/60 to-transparent p-2 z-10">
+             <span className="bg-daraz-orange text-white text-[8px] font-black px-2 py-0.5 rounded-sm uppercase italic shadow-sm">Official Store</span>
+          </div>
+        </Link>
+
+        {/* Floating Quick Share Button */}
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsShareOpen(true);
+          }}
+          title="Share Product"
+          className="absolute top-2 right-2 bg-white/90 hover:bg-white text-neutral-700 hover:text-daraz-orange p-1.5 rounded-full shadow-md backdrop-blur-xs transition-all z-20 opacity-0 group-hover:opacity-100 cursor-pointer"
+        >
+          <Share2 size={14} />
+        </button>
+      </div>
       
       <div className="p-3 flex flex-col flex-1">
         <Link to={`/product/${product.id}`}>
@@ -766,6 +784,12 @@ function ProductCard({ product }: { product: Product }) {
           </div>
         </div>
       </div>
+
+      <ShareModal
+        isOpen={isShareOpen}
+        onClose={() => setIsShareOpen(false)}
+        product={product}
+      />
     </div>
   );
 }

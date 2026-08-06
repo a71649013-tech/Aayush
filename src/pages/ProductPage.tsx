@@ -8,6 +8,8 @@ import { AdPlacement } from '../components/AdPlacement';
 import { NEPAL_CITIES } from '../constants';
 import { ProductImage } from '../components/ProductImage';
 import { formatVideoEmbedUrl } from '../lib/videoUtils';
+import ShareModal from '../components/ShareModal';
+import { MOCK_PRODUCTS } from '../mockData';
 
 export default function ProductPage({ products, onAddToCart, onAddReview }: { 
   products: Product[], 
@@ -16,7 +18,12 @@ export default function ProductPage({ products, onAddToCart, onAddReview }: {
 }) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const product = products.find(p => p.id === id);
+
+  const decodedId = id ? decodeURIComponent(id) : '';
+
+  // Look up product in products array (from props), or fallback to MOCK_PRODUCTS directly
+  const product = products.find(p => String(p.id) === decodedId || String(p.id) === id || p.id === id) 
+               || MOCK_PRODUCTS.find(p => String(p.id) === decodedId || String(p.id) === id || p.id === id);
   
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
@@ -25,7 +32,53 @@ export default function ProductPage({ products, onAddToCart, onAddReview }: {
   const [isCitySelectorOpen, setIsCitySelectorOpen] = useState(false);
   const [activeMedia, setActiveMedia] = useState<'photo' | 'video'>('photo');
 
-  if (!product) return <div className="p-20 text-center">Product not found.</div>;
+  // Share & Wishlist States
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [wishlistToast, setWishlistToast] = useState(false);
+
+  if (!product) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center p-8 text-center bg-white rounded-2xl my-8 border border-neutral-200 max-w-lg mx-auto shadow-sm">
+        <div className="w-16 h-16 bg-amber-100 text-daraz-orange rounded-full flex items-center justify-center mb-4 font-black text-xl">
+          🛍️
+        </div>
+        <h2 className="text-xl font-black text-neutral-900 mb-2">Product Not Found</h2>
+        <p className="text-xs text-neutral-500 mb-6 max-w-xs leading-relaxed">
+          The product you are looking for may have been updated or is no longer available in the Nepali Mart inventory.
+        </p>
+        <Link 
+          to="/" 
+          className="bg-daraz-orange text-white text-xs font-extrabold uppercase px-6 py-3 rounded-xl shadow-md hover:bg-amber-600 transition-colors"
+        >
+          Explore Marketplace
+        </Link>
+      </div>
+    );
+  }
+
+  const handleShareProduct = async () => {
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: `Check out ${product.name} on Nepali Mart!`,
+          text: `Buy ${product.name} for ${formatCurrency(product.price)} on Nepali Mart.`,
+          url: window.location.href,
+        });
+        return;
+      } catch (err) {
+        console.log("Web Share API canceled or dismissed:", err);
+      }
+    }
+    // Fallback to rich ShareModal with social share options and copy link
+    setIsShareModalOpen(true);
+  };
+
+  const handleToggleWishlist = () => {
+    setIsWishlisted(!isWishlisted);
+    setWishlistToast(true);
+    setTimeout(() => setWishlistToast(false), 3000);
+  };
 
   const handleSubmitReview = (e: React.FormEvent) => {
     e.preventDefault();
@@ -166,8 +219,24 @@ export default function ProductPage({ products, onAddToCart, onAddReview }: {
                 </div>
               </div>
               <div className="flex gap-4">
-                <Share2 size={18} className="text-neutral-400 cursor-pointer hover:text-daraz-orange" />
-                <Heart size={18} className="text-neutral-400 cursor-pointer hover:text-daraz-orange" />
+                <button 
+                  onClick={handleShareProduct}
+                  title="Share product with friends"
+                  className="p-1.5 hover:bg-neutral-100 rounded-lg transition-colors cursor-pointer flex items-center gap-1 text-neutral-600 hover:text-daraz-orange"
+                >
+                  <Share2 size={18} />
+                  <span className="text-xs font-bold hidden sm:inline">Share</span>
+                </button>
+                <button 
+                  onClick={handleToggleWishlist}
+                  title={isWishlisted ? "Remove from Wishlist" : "Add to Wishlist"}
+                  className="p-1.5 hover:bg-neutral-100 rounded-lg transition-colors cursor-pointer"
+                >
+                  <Heart 
+                    size={18} 
+                    className={cn("transition-colors", isWishlisted ? "text-red-500 fill-red-500" : "text-neutral-500 hover:text-daraz-orange")} 
+                  />
+                </button>
               </div>
             </div>
 
@@ -198,21 +267,29 @@ export default function ProductPage({ products, onAddToCart, onAddReview }: {
                </div>
             </div>
 
-            <div className="flex gap-4 pt-4">
+            <div className="flex flex-wrap gap-3 pt-4">
               <button 
                 onClick={() => {
                   onAddToCart(product);
                   navigate('/cart');
                 }}
-                className="flex-1 bg-blue-500 text-white font-bold py-3.5 rounded-sm hover:opacity-90 active:scale-[0.98] transition-all"
+                className="flex-1 min-w-[120px] bg-blue-500 text-white font-bold py-3.5 rounded-sm hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer"
               >
                 Buy Now
               </button>
               <button 
                 onClick={() => onAddToCart(product)}
-                className="flex-1 bg-daraz-orange text-white font-bold py-3.5 rounded-sm hover:opacity-90 active:scale-[0.98] transition-all"
+                className="flex-1 min-w-[120px] bg-daraz-orange text-white font-bold py-3.5 rounded-sm hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer"
               >
                 Add to Cart
+              </button>
+              <button
+                onClick={handleShareProduct}
+                title="Share product via Web Share API"
+                className="px-4 py-3.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-extrabold rounded-sm transition-all flex items-center justify-center gap-2 cursor-pointer border border-neutral-200"
+              >
+                <Share2 size={18} className="text-daraz-orange" />
+                <span className="text-xs uppercase tracking-wider">Share</span>
               </button>
             </div>
 
@@ -224,7 +301,13 @@ export default function ProductPage({ products, onAddToCart, onAddReview }: {
              <div className="bg-neutral-50 border border-neutral-100 rounded-sm p-4 space-y-4">
                 <div className="flex justify-between items-start">
                    <h3 className="text-xs font-bold text-neutral-500 uppercase">Delivery Options</h3>
-                   <Share2 size={14} className="text-neutral-400" />
+                   <button 
+                     onClick={handleShareProduct}
+                     title="Share product"
+                     className="text-neutral-400 hover:text-daraz-orange transition-colors cursor-pointer"
+                   >
+                     <Share2 size={14} />
+                   </button>
                 </div>
                 
                 <div className="flex gap-3 items-start relative">
@@ -443,6 +526,21 @@ export default function ProductPage({ products, onAddToCart, onAddReview }: {
            </div>
         </div>
       </div>
+
+      {/* Share Modal Dialog */}
+      <ShareModal 
+        isOpen={isShareModalOpen} 
+        onClose={() => setIsShareModalOpen(false)} 
+        product={product} 
+      />
+
+      {/* Wishlist Toast Alert */}
+      {wishlistToast && (
+        <div className="fixed top-20 right-6 bg-neutral-900 text-white px-4 py-3 rounded-xl shadow-2xl z-[999] flex items-center gap-2 text-xs font-bold animate-bounce-short border border-neutral-700">
+          <Heart size={16} className={isWishlisted ? "text-red-500 fill-red-500" : "text-neutral-400"} />
+          <span>{isWishlisted ? "Added to your Wishlist! ❤️" : "Removed from your Wishlist"}</span>
+        </div>
+      )}
     </div>
   );
 }

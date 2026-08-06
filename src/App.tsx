@@ -28,14 +28,16 @@ import AdminDashboard from './pages/AdminDashboard';
 import MobileBottomNav from './components/MobileBottomNav';
 import NotificationToast from './components/NotificationToast';
 import FloatingMerchantPortal from './components/FloatingMerchantPortal';
+import AIChatBot from './components/AIChatBot';
 import { productService } from './services/productService';
 import { initUnityAds } from './services/unityAdsService';
 import { initOneSignal } from './lib/notifications';
 import { CartItem, Product } from './types';
+import { MOCK_PRODUCTS } from './mockData';
 
 export default function App() {
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
   const { user, loading, connectionError } = useFirebase();
 
   useEffect(() => {
@@ -143,6 +145,7 @@ export default function App() {
         <Footer />
         <MobileBottomNav cartCount={cartCount} />
         <FloatingMerchantPortal products={products} />
+        <AIChatBot />
       </div>
     </Router>
   );

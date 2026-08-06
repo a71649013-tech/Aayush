@@ -76,14 +76,17 @@ export const productService = {
       });
       
       if (snapshot.empty) {
-        // If snapshot is empty, pass empty array to subscriber
-        callback([]);
+        // If snapshot is empty, pass MOCK_PRODUCTS
+        callback(MOCK_PRODUCTS);
       } else {
-        callback(dbProducts);
+        // Merge dbProducts with MOCK_PRODUCTS so default items remain accessible
+        const dbIds = new Set(dbProducts.map(p => p.id));
+        const combined = [...dbProducts, ...MOCK_PRODUCTS.filter(m => !dbIds.has(m.id))];
+        callback(combined);
       }
     }, (error) => {
-      console.warn('Firestore subscription failed:', error);
-      callback([]);
+      console.warn('Firestore subscription failed, falling back to mock products:', error);
+      callback(MOCK_PRODUCTS);
     });
   },
 

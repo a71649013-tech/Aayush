@@ -299,6 +299,71 @@ Extract and return a strictly valid JSON object matching this schema:
   }
 });
 
+// API Route: AI Shopping Assistant Chatbot
+app.post("/api/chat", async (req, res) => {
+  try {
+    const { messages } = req.body;
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      return res.status(400).json({ error: "Messages array is required." });
+    }
+
+    const systemInstruction = `You are "Sathi AI", the official intelligent AI Shopping Assistant for Nepali Mart (nepalimart.com) - Nepal's premier online marketplace.
+
+Your purpose is to warmly assist customers in Nepal and across the globe with:
+- Product recommendations (Electronics, Fashion, Local Nepalese Handicrafts, Organic Ilam Tea, Pashmina, Home Goods).
+- Guidance on payments in Nepal (eSewa, Khalti, IME Pay, Visa/Mastercard, Cash on Delivery - COD).
+- Shipping & Delivery across Nepal (Kathmandu, Pokhara, Lalitpur, Biratnagar, Chitwan, Butwal, etc.).
+- Answering queries about discounts, vouchers, and rewards.
+- Helping users find items, compare prices, or troubleshoot shopping questions.
+
+Tone & Style:
+- Warm, respectful, polite, and helpful Nepalese hospitality.
+- Feel free to use friendly greetings like "Namaste! 🙏" or "Dhanyabad!".
+- Support English, Nepali (Devanagari or Romanized Nepali), or mixed language as input by the user.
+- Structure your responses with clean Markdown (bullet points, bold highlights, concise steps).`;
+
+    // Convert message history for Gemini SDK
+    const contents = messages.map((m: { role: string; content: string }) => ({
+      role: m.role === 'user' ? 'user' : 'model',
+      parts: [{ text: m.content }]
+    }));
+
+    try {
+      const geminiRes = await ai.models.generateContent({
+        model: "gemini-3.6-flash",
+        contents: contents,
+        config: {
+          systemInstruction: systemInstruction,
+          temperature: 0.7,
+        }
+      });
+
+      const replyText = geminiRes.text || "Namaste! 🙏 I am Sathi, your Nepali Mart AI Assistant. How can I help you today?";
+      return res.json({ reply: replyText });
+    } catch (aiErr: any) {
+      console.warn("Gemini API in chatbot encountered error/quota limit, returning smart fallback:", aiErr?.message);
+      
+      const lastUserMsg = (messages[messages.length - 1]?.content || '').toLowerCase();
+      let fallbackReply = "Namaste! 🙏 I am Sathi, your Nepali Mart AI Assistant. How can I help you shop, track delivery, or pay via eSewa/Khalti?";
+
+      if (lastUserMsg.includes("esewa") || lastUserMsg.includes("khalti") || lastUserMsg.includes("payment")) {
+        fallbackReply = "Namaste! 🙏 At Nepali Mart, we support multiple secure payment options:\n\n- **eSewa Mobile Wallet**\n- **Khalti Digital Wallet**\n- **IME Pay**\n- **Visa / MasterCard**\n- **Cash on Delivery (COD)** anywhere in Nepal!";
+      } else if (lastUserMsg.includes("delivery") || lastUserMsg.includes("shipping") || lastUserMsg.includes("kathmandu") || lastUserMsg.includes("pokhara")) {
+        fallbackReply = "Namaste! 🙏 Delivery times across Nepal:\n\n- **Inside Kathmandu Valley**: 1–2 business days (NPR 100 delivery charge, or FREE for orders over NPR 3,000).\n- **Outside Valley (Pokhara, Chitwan, Biratnagar, etc.)**: 3–5 business days (NPR 150).";
+      } else if (lastUserMsg.includes("handicraft") || lastUserMsg.includes("tea") || lastUserMsg.includes("pashmina") || lastUserMsg.includes("nepal")) {
+        fallbackReply = "Namaste! 🙏 Nepali Mart proudly features authentic handcrafted Nepalese goods:\n\n1. **Pure Cashmere Pashmina Shawls**\n2. **Organic Ilam Orthodox Tea**\n3. **Handcrafted Singing Bowls & Thanka Paintings**\n4. **Lokta Paper Crafts**";
+      } else if (lastUserMsg.includes("phone") || lastUserMsg.includes("electronic") || lastUserMsg.includes("gadget") || lastUserMsg.includes("watch")) {
+        fallbackReply = "Namaste! 🙏 Check out our **Electronics & Gadgets** section for genuine smartphones, Bluetooth earbuds, smartwatches, and laptops with local manufacturer warranty!";
+      }
+
+      return res.json({ reply: fallbackReply });
+    }
+  } catch (error: any) {
+    console.error("Error in chatbot route:", error);
+    return res.status(500).json({ error: "Unable to process chat at this time." });
+  }
+});
+
 async function startServer() {
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {

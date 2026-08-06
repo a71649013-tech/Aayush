@@ -156,6 +156,15 @@ export default function Navbar({ cartCount }: { cartCount: number }) {
           <Link to="/vouchers" className="text-daraz-orange hover:opacity-80 flex items-center gap-1 font-black">
             💎 Gems & Vouchers
           </Link>
+          <button 
+            onClick={() => {
+              const btn = document.getElementById('sathi-ai-chatbot-button');
+              if (btn) btn.click();
+            }}
+            className="text-amber-600 hover:opacity-80 flex items-center gap-1 font-black cursor-pointer uppercase"
+          >
+            🤖 Sathi AI Assistant
+          </button>
           <Link to="/messages" className="text-emerald-600 hover:opacity-80 flex items-center gap-1 font-black">
             ✉️ Messages
           </Link>
