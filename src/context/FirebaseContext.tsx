@@ -108,14 +108,14 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           try {
             await createUserWithEmailAndPassword(auth, email, password);
           } catch (signUpErr) {
-            console.error("Autobootstrap masteradmin account error:", signUpErr);
+            console.warn("Autobootstrap masteradmin account notice:", signUpErr?.message || signUpErr);
           }
         } else {
-          console.error("Silent sign in masteradmin error:", err);
+          console.warn("Silent sign in masteradmin notice (network/offline fallback active):", err?.message || err);
         }
       }
-    } catch (e) {
-      console.error("Firebase background PIN auth integration error:", e);
+    } catch (e: any) {
+      console.warn("Firebase background PIN auth integration notice:", e?.message || e);
     }
   };
 

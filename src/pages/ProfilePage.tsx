@@ -163,8 +163,30 @@ export default function ProfilePage({ user }: ProfilePageProps) {
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (selectedOrder && simulationActive) {
-      // Set random initial simulation offsets so it looks custom every time they open an order
-      setDriverProgress(prev => (prev >= 95 ? 15 : prev));
+      const s = (selectedOrder.driverStatus || selectedOrder.status || '').toLowerCase();
+      if (s === 'delivered') {
+        setDriverProgress(100);
+        setDriverDistance(0);
+        setDriverEta(0);
+      } else if (s === 'arrived' || s === 'arrived at location') {
+        setDriverProgress(98);
+        setDriverDistance(0.1);
+        setDriverEta(0);
+      } else if (s === 'out for delivery') {
+        setDriverProgress(85);
+        setDriverDistance(0.5);
+        setDriverEta(3);
+      } else if (s === 'in transit' || s === 'in-transit') {
+        setDriverProgress(45);
+        setDriverDistance(2.1);
+        setDriverEta(12);
+      } else if (s === 'pending' || s === 'processing') {
+        setDriverProgress(10);
+        setDriverDistance(3.8);
+        setDriverEta(18);
+      } else {
+        setDriverProgress(prev => (prev >= 95 ? 15 : prev));
+      }
       
       const targetLat = Number(selectedOrder.address?.latitude) || 27.6915;
       const targetLng = Number(selectedOrder.address?.longitude) || 85.3422;
@@ -172,7 +194,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
       timer = setInterval(() => {
         setDriverProgress(prev => {
           if (prev >= 100) {
-            return 100; // Arrived
+            return 100; // Arrived / Delivered
           }
           const nextVal = Math.min(100, prev + 2);
           
@@ -213,7 +235,8 @@ export default function ProfilePage({ user }: ProfilePageProps) {
   });
   const toReceiveOrders = orders.filter(o => {
     const s = (o.status || '').toLowerCase();
-    return s === 'shipped' || s === 'delayed' || s === 'in transit' || s === 'in-transit' || s === 'transit';
+    const ds = (o.driverStatus || '').toLowerCase();
+    return s === 'shipped' || s === 'delayed' || s === 'in transit' || s === 'in-transit' || s === 'out for delivery' || s === 'arrived' || s === 'transit' || ds === 'in transit' || ds === 'out for delivery' || ds === 'arrived';
   });
   const toReviewOrders = orders.filter(o => {
     const s = (o.status || '').toLowerCase();
@@ -239,8 +262,13 @@ export default function ProfilePage({ user }: ProfilePageProps) {
   const currentDisplayOrders = getFilteredOrders();
 
   const getStatusColor = (status: string) => {
-    switch (status) {
+    const s = (status || '').toLowerCase();
+    switch (s) {
       case 'delivered': return 'bg-emerald-50 text-emerald-700 border-emerald-100';
+      case 'arrived': return 'bg-emerald-100 text-emerald-800 border-emerald-300 font-extrabold animate-pulse';
+      case 'out for delivery': return 'bg-sky-50 text-sky-700 border-sky-200 font-extrabold';
+      case 'in transit':
+      case 'in-transit': return 'bg-purple-50 text-purple-700 border-purple-200';
       case 'shipped': return 'bg-blue-50 text-blue-700 border-blue-100';
       case 'processing': return 'bg-amber-50 text-amber-700 border-amber-100';
       case 'delayed': return 'bg-rose-50 text-rose-700 border-rose-100';
@@ -778,7 +806,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                       
                       {/* Mini info bubble on hover */}
                       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-neutral-950 border border-neutral-800 text-[7.5px] font-black text-white px-1.5 py-0.5 rounded shadow-lg whitespace-nowrap uppercase tracking-tight pointer-events-none opacity-90">
-                        Subash: {driverDistance} km away
+                        {selectedOrder.driverName || 'Subash Tamang'}: {driverDistance} km away
                       </div>
                     </div>
                   ) : null}
@@ -840,7 +868,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                       >
                         <div className="flex items-center justify-between gap-2 mb-1">
                           <span className="text-[7.5px] font-black uppercase tracking-tight opacity-75">
-                            {chat.sender === 'rider' ? '👨🏽‍✈️ Subash Tamang (Rider)' : '👤 You (Customer)'}
+                            {chat.sender === 'rider' ? `👨🏽‍✈️ ${selectedOrder.driverName || 'Subash Tamang'} (Rider)` : '👤 You (Customer)'}
                           </span>
                           <span className="text-[7px] font-mono opacity-60 font-bold">{chat.time}</span>
                         </div>
@@ -851,7 +879,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                     {/* Typing bubble simulated loader */}
                     {isTyping && (
                       <div className="bg-neutral-100 text-neutral-700 max-w-[50%] rounded-lg rounded-tl-none p-2 mr-auto flex items-center gap-1.5 border border-neutral-200/55 animate-pulse">
-                        <span className="text-[7.5px] font-black uppercase tracking-tight text-neutral-400">Subash is typing</span>
+                        <span className="text-[7.5px] font-black uppercase tracking-tight text-neutral-400">{selectedOrder.driverName || 'Subash'} is typing</span>
                         <div className="flex gap-1 items-center">
                           <span className="h-1.5 w-1.5 bg-neutral-400 rounded-full animate-bounce delay-0" />
                           <span className="h-1.5 w-1.5 bg-neutral-400 rounded-full animate-bounce [animation-delay:0.2s]" />
@@ -864,7 +892,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                   {/* Quick Preset Taps Selector Panel */}
                   <div className="space-y-1.5 text-left">
                     <p className="text-[8px] font-black text-neutral-450 uppercase tracking-widest">
-                      Tap a message to send to rider Subash:
+                      Tap a message to send to rider {selectedOrder.driverName || 'Subash'}:
                     </p>
                     <div className="flex flex-wrap gap-1">
                       <button
@@ -908,7 +936,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                   <div className="bg-neutral-50 rounded-xl p-3 border border-neutral-150 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 text-left">
                     <div className="flex items-center gap-3">
                       {/* Driver Avatar Frame */}
-                      <div className="h-11 w-11 rounded-full bg-orange-100 border border-orange-200 flex items-center justify-center text-lg shadow-3xs relative">
+                      <div className="h-11 w-11 rounded-full bg-orange-100 border border-orange-200 flex items-center justify-center text-lg shadow-3xs relative shrink-0">
                         👨🏽‍✈️
                         <div className="absolute bottom-0 right-0 h-2.5 w-2.5 bg-green-500 rounded-full border border-white" />
                       </div>
@@ -916,13 +944,16 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                       {/* Rider Bio */}
                       <div>
                         <div className="flex items-center gap-1.5">
-                          <p className="text-xs font-black text-neutral-800 leading-tight uppercase">Subash Tamang</p>
+                          <p className="text-xs font-black text-neutral-800 leading-tight uppercase">{selectedOrder.driverName || 'Subash Tamang'}</p>
                           <span className="bg-amber-50 border border-amber-200 text-amber-700 text-[7px] font-black uppercase px-1 rounded">⭐ 4.9</span>
                         </div>
-                        <p className="text-[9.5px] font-extrabold text-neutral-400 uppercase tracking-tight mt-0.5">Bajaj Pulsar (Ba 2 Pa 5620)</p>
-                        <p className="text-[10px] font-bold text-[#f05625] tracking-wide mt-1 inline-flex items-center gap-1">
-                          📞 +977 981-3255901
-                        </p>
+                        <p className="text-[9.5px] font-extrabold text-neutral-400 uppercase tracking-tight mt-0.5">{selectedOrder.driverVehicle || 'Bajaj Pulsar (Ba 2 Pa 5620)'}</p>
+                        <a 
+                          href={`tel:${(selectedOrder.driverPhone || '+977 981-3255901').replace(/\s+/g, '')}`}
+                          className="text-[10px] font-bold text-[#f05625] hover:underline tracking-wide mt-1 inline-flex items-center gap-1"
+                        >
+                          📞 {selectedOrder.driverPhone || '+977 981-3255901'}
+                        </a>
                       </div>
                     </div>
 
@@ -940,14 +971,17 @@ export default function ProfilePage({ user }: ProfilePageProps) {
 
                     {/* Quick call dial-out button */}
                     <div className="flex gap-1.5 md:flex-col justify-end w-full md:w-auto">
-                      <button 
-                        onClick={() => {
-                          alert("📞 Dialing Subash Tamang directly: +977 981-3255901. Courier is currently driving.");
+                      <a 
+                        href={`tel:${(selectedOrder.driverPhone || '+977 981-3255901').replace(/\s+/g, '')}`}
+                        onClick={(e) => {
+                          const phone = selectedOrder.driverPhone || '+977 981-3255901';
+                          const name = selectedOrder.driverName || 'Subash Tamang';
+                          alert(`📞 Dialing ${name} directly at ${phone}...`);
                         }}
-                        className="flex-1 md:flex-initial bg-daraz-orange hover:bg-opacity-95 text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-2 rounded-sm text-center cursor-pointer transition-opacity"
+                        className="flex-1 md:flex-initial bg-daraz-orange hover:bg-opacity-95 text-white text-[9px] font-black uppercase tracking-wider px-3 py-2 rounded-sm text-center cursor-pointer transition-opacity flex items-center justify-center gap-1"
                       >
-                        Call Rider
-                      </button>
+                        📞 Call Rider ({selectedOrder.driverName?.split(' ')[0] || 'Subash'})
+                      </a>
                       <button 
                         onClick={() => setSimulationActive(!simulationActive)}
                         className={cn(

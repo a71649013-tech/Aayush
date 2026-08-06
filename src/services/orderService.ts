@@ -75,10 +75,36 @@ export const orderService = {
     });
   },
 
-  async updateOrderStatus(orderId: string, status: string) {
+  async updateOrderStatus(orderId: string, status: string, driverStatus?: string) {
     try {
       const docRef = doc(db, COLLECTION_NAME, orderId);
-      await updateDoc(docRef, { status });
+      await updateDoc(docRef, { 
+        status,
+        driverStatus: driverStatus || status,
+        updatedAt: serverTimestamp()
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `${COLLECTION_NAME}/${orderId}`);
+    }
+  },
+
+  async assignDriverToOrder(orderId: string, driver: {
+    driverId?: string;
+    driverName: string;
+    driverPhone: string;
+    driverVehicle: string;
+    driverPhoto?: string;
+  }) {
+    try {
+      const docRef = doc(db, COLLECTION_NAME, orderId);
+      await updateDoc(docRef, {
+        driverId: driver.driverId || 'drv_' + Date.now(),
+        driverName: driver.driverName,
+        driverPhone: driver.driverPhone,
+        driverVehicle: driver.driverVehicle,
+        driverPhoto: driver.driverPhoto || '',
+        updatedAt: serverTimestamp()
+      });
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `${COLLECTION_NAME}/${orderId}`);
     }

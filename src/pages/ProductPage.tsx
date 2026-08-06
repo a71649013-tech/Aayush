@@ -5,7 +5,7 @@ import { Product } from '../types';
 import { formatCurrency, cn } from '../lib/utils';
 import { motion } from 'motion/react';
 import { AdPlacement } from '../components/AdPlacement';
-import { NEPAL_CITIES } from '../constants';
+import { NEPAL_CITIES, CITY_PROVINCE_MAP } from '../constants';
 import { ProductImage } from '../components/ProductImage';
 import { formatVideoEmbedUrl } from '../lib/videoUtils';
 import ShareModal from '../components/ShareModal';
@@ -28,7 +28,7 @@ export default function ProductPage({ products, onAddToCart, onAddReview }: {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedCity, setSelectedCity] = useState('Kathmandu');
+  const [selectedCity, setSelectedCity] = useState('Birgunj');
   const [isCitySelectorOpen, setIsCitySelectorOpen] = useState(false);
   const [activeMedia, setActiveMedia] = useState<'photo' | 'video'>('photo');
 
@@ -313,7 +313,7 @@ export default function ProductPage({ products, onAddToCart, onAddReview }: {
                 <div className="flex gap-3 items-start relative">
                    <MapPin size={16} className="text-neutral-400 mt-1 shrink-0" />
                    <div className="text-xs flex-1">
-                      <p className="font-bold text-neutral-800">Bagmati, {selectedCity}</p>
+                      <p className="font-bold text-neutral-800">{CITY_PROVINCE_MAP[selectedCity] || 'Nepal'}, {selectedCity}</p>
                       <button 
                         onClick={() => setIsCitySelectorOpen(!isCitySelectorOpen)}
                         className="text-blue-500 font-medium flex items-center gap-1 uppercase text-[10px]"

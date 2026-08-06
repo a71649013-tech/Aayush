@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Product, CartItem } from '../types';
-import { Package, ShoppingCart, TrendingUp, Users, Edit3, Trash2, CheckCircle, Clock, ShieldAlert, Zap, Plus, Upload, X, MessageSquare, Bell, Send, User as UserIcon, Link as LinkIcon, Globe, Video as VideoIcon, Play, Sparkles, ExternalLink, RefreshCw, FileText, Layers } from 'lucide-react';
+import { Package, ShoppingCart, TrendingUp, Users, Edit3, Trash2, CheckCircle, Clock, ShieldAlert, Zap, Plus, Upload, X, MessageSquare, Bell, Send, User as UserIcon, Link as LinkIcon, Globe, Video as VideoIcon, Play, Sparkles, ExternalLink, RefreshCw, FileText, Layers, Truck, Save } from 'lucide-react';
 import { formatCurrency, cn } from '../lib/utils';
 import { orderService } from '../services/orderService';
 import { productService } from '../services/productService';
@@ -225,7 +225,7 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
     requestNotificationPermission, 
     dispatchNotification 
   } = useFirebase();
-  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'messages'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'messages' | 'driver'>('orders');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [orders, setOrders] = useState<any[]>([]);
@@ -262,6 +262,56 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
   const [broadcastCategory, setBroadcastCategory] = useState<'promos' | 'activities' | 'orders'>('promos');
   const [broadcastTitle, setBroadcastTitle] = useState('');
   const [broadcastDesc, setBroadcastDesc] = useState('');
+
+  // Driver Fleet & Assignment State
+  const [drivers, setDrivers] = useState([
+    {
+      id: 'drv_1',
+      name: 'Subash Tamang',
+      phone: '+977 981-3255901',
+      vehicle: 'Bajaj Pulsar (Ba 2 Pa 5620)',
+      hub: 'Kathmandu Central Hub',
+      status: 'On Duty',
+      rating: '4.9'
+    },
+    {
+      id: 'drv_2',
+      name: 'Ramesh Shrestha',
+      phone: '+977 984-1122334',
+      vehicle: 'Yamaha FZ (Ba 3 Pa 9812)',
+      hub: 'Lalitpur Hub',
+      status: 'On Duty',
+      rating: '4.8'
+    },
+    {
+      id: 'drv_3',
+      name: 'Bikash Sunuwar',
+      phone: '+977 980-8765432',
+      vehicle: 'TVS NTorq (Ba 4 Pa 3311)',
+      hub: 'Bhaktapur Hub',
+      status: 'On Duty',
+      rating: '4.9'
+    },
+    {
+      id: 'drv_4',
+      name: 'Saroj Rai',
+      phone: '+977 986-5544332',
+      vehicle: 'Honda Shine (Ba 1 Pa 4400)',
+      hub: 'Thamel Dispatch Hub',
+      status: 'On Duty',
+      rating: '5.0'
+    }
+  ]);
+  const [showAddDriverModal, setShowAddDriverModal] = useState(false);
+  const [driverViewMode, setDriverViewMode] = useState<'cards' | 'direct_table'>('direct_table');
+  const [editingDriver, setEditingDriver] = useState<any | null>(null);
+  const [driverFormData, setDriverFormData] = useState({
+    name: '',
+    phone: '',
+    vehicle: '',
+    hub: 'Kathmandu Central Hub',
+    status: 'On Duty'
+  });
   
   // Promo-specific fields
   const [promoBannerTitle, setPromoBannerTitle] = useState('6.6 FLASH DEAL');
@@ -650,8 +700,109 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
     }
   };
 
-  const handleUpdateStatus = async (orderId: string, status: string) => {
-    await orderService.updateOrderStatus(orderId, status);
+  const handleUpdateStatus = async (orderId: string, status: string, driverStatus?: string) => {
+    const finalDriverStatus = driverStatus || status;
+    await orderService.updateOrderStatus(orderId, status, finalDriverStatus);
+    dispatchNotification("Delivery Status Updated!", `Order #${orderId.substring(0, 8).toUpperCase()} status set to "${finalDriverStatus}".`, "orders");
+  };
+
+  const handleSaveDriver = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!driverFormData.name.trim() || !driverFormData.phone.trim()) {
+      alert("Please provide both Driver Name and Phone Number.");
+      return;
+    }
+
+    if (editingDriver) {
+      // Edit existing driver
+      setDrivers(prev => prev.map(d => d.id === editingDriver.id ? {
+        ...d,
+        name: driverFormData.name,
+        phone: driverFormData.phone,
+        vehicle: driverFormData.vehicle || 'Delivery Scooter',
+        hub: driverFormData.hub,
+        status: driverFormData.status
+      } : d));
+      
+      // Also update any orders assigned to this driver
+      orders.forEach(async (ord) => {
+        if (ord.driverId === editingDriver.id || ord.driverName === editingDriver.name) {
+          await orderService.assignDriverToOrder(ord.id, {
+            driverId: editingDriver.id,
+            driverName: driverFormData.name,
+            driverPhone: driverFormData.phone,
+            driverVehicle: driverFormData.vehicle || 'Delivery Scooter'
+          });
+        }
+      });
+
+      dispatchNotification("Driver Profile Updated!", `Updated ${driverFormData.name}'s info (${driverFormData.phone}).`, "orders");
+    } else {
+      // Create new driver
+      const newDrv = {
+        id: 'drv_' + Date.now(),
+        name: driverFormData.name,
+        phone: driverFormData.phone,
+        vehicle: driverFormData.vehicle || 'Delivery Scooter',
+        hub: driverFormData.hub,
+        status: driverFormData.status,
+        rating: '5.0'
+      };
+      setDrivers(prev => [...prev, newDrv]);
+      dispatchNotification("New Driver Registered!", `Registered ${newDrv.name} (${newDrv.phone}) to ${newDrv.hub}.`, "orders");
+    }
+
+    setShowAddDriverModal(false);
+    setEditingDriver(null);
+    setDriverFormData({
+      name: '',
+      phone: '',
+      vehicle: '',
+      hub: 'Kathmandu Central Hub',
+      status: 'On Duty'
+    });
+  };
+
+  const handleAssignDriverToOrder = async (orderId: string, driverObj: any) => {
+    await orderService.assignDriverToOrder(orderId, {
+      driverId: driverObj.id,
+      driverName: driverObj.name,
+      driverPhone: driverObj.phone,
+      driverVehicle: driverObj.vehicle
+    });
+    dispatchNotification(
+      "Courier Assigned to Order!", 
+      `Order #${orderId.substring(0,8).toUpperCase()} assigned to ${driverObj.name} (${driverObj.phone}).`, 
+      "orders"
+    );
+  };
+
+  const handleDirectUpdateDriver = (driverId: string, field: string, value: string) => {
+    setDrivers(prev => prev.map(d => {
+      if (d.id === driverId) {
+        const updated = { ...d, [field]: value };
+        // Sync assigned orders in real time
+        orders.forEach(async (ord) => {
+          if (ord.driverId === driverId || ord.driverName === d.name) {
+            await orderService.assignDriverToOrder(ord.id, {
+              driverId: driverId,
+              driverName: updated.name,
+              driverPhone: updated.phone,
+              driverVehicle: updated.vehicle
+            });
+          }
+        });
+        return updated;
+      }
+      return d;
+    }));
+  };
+
+  const handleDeleteDriver = (driverId: string, name: string) => {
+    if (confirm(`Are you sure you want to delete driver "${name}" from the fleet?`)) {
+      setDrivers(prev => prev.filter(d => d.id !== driverId));
+      dispatchNotification("Driver Removed", `Driver ${name} was removed from the fleet.`, "orders");
+    }
   };
 
   const stats = {
@@ -754,6 +905,15 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
             >
               Messages & Broadcasts
             </button>
+            <button 
+              onClick={() => setActiveTab('driver')}
+              className={cn(
+                "px-8 py-4 text-xs font-bold uppercase tracking-widest transition-all border-b-2 shrink-0 flex items-center gap-2",
+                activeTab === 'driver' ? "border-daraz-orange text-daraz-orange font-black" : "border-transparent text-neutral-400 hover:text-neutral-600"
+              )}
+            >
+              <Truck size={14} className={activeTab === 'driver' ? "text-daraz-orange" : ""} /> Driver Dashboard
+            </button>
           </div>
 
           <div className="p-6">
@@ -766,7 +926,8 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
                       <th className="px-4 py-3">Customer</th>
                       <th className="px-4 py-3">Method</th>
                       <th className="px-4 py-3">Total</th>
-                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3">Order Status</th>
+                      <th className="px-4 py-3">Driver Status Toggle</th>
                       <th className="px-4 py-3 text-right">Actions</th>
                     </tr>
                   </thead>
@@ -784,18 +945,59 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
                             value={order.status}
                             onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
                             className={cn(
-                              "px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter outline-none border-none cursor-pointer bg-opacity-10",
-                              order.status === 'pending' ? "bg-yellow-100 text-yellow-700" :
-                              order.status === 'shipped' ? "bg-blue-100 text-blue-700" :
-                              order.status === 'delivered' ? "bg-green-100 text-green-700" :
-                              "bg-red-100 text-red-700"
+                              "px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-tight outline-none border cursor-pointer transition-colors shadow-2xs",
+                              order.status === 'pending' || order.status === 'processing' ? "bg-amber-50 text-amber-800 border-amber-200" :
+                              order.status === 'in transit' || order.status === 'in-transit' ? "bg-purple-50 text-purple-800 border-purple-200" :
+                              order.status === 'out for delivery' ? "bg-sky-50 text-sky-800 border-sky-200 font-extrabold" :
+                              order.status === 'shipped' ? "bg-blue-50 text-blue-800 border-blue-200" :
+                              order.status === 'delivered' ? "bg-emerald-50 text-emerald-800 border-emerald-200" :
+                              "bg-rose-50 text-rose-800 border-rose-200"
                             )}
                           >
-                            <option value="pending">Pending</option>
-                            <option value="shipped">Shipped</option>
-                            <option value="delivered">Delivered</option>
-                            <option value="cancelled">Cancelled</option>
+                            <option value="pending">🏪 Pending / Prep</option>
+                            <option value="in transit">🚚 In Transit</option>
+                            <option value="out for delivery">🛵 Out for Delivery</option>
+                            <option value="shipped">📦 Shipped</option>
+                            <option value="delivered">✅ Delivered</option>
+                            <option value="cancelled">❌ Cancelled</option>
                           </select>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-1 bg-neutral-100 p-1 rounded-md border border-neutral-200/80 w-fit">
+                            <button
+                              type="button"
+                              title="Set Driver Status: In Transit"
+                              onClick={() => handleUpdateStatus(order.id, 'in transit')}
+                              className={cn(
+                                "px-2 py-0.5 rounded text-[8.5px] font-black uppercase tracking-tight transition-all cursor-pointer flex items-center gap-1",
+                                order.status === 'in transit' ? "bg-purple-600 text-white shadow-2xs" : "text-neutral-600 hover:bg-neutral-200"
+                              )}
+                            >
+                              🚚 Transit
+                            </button>
+                            <button
+                              type="button"
+                              title="Set Driver Status: Out for Delivery"
+                              onClick={() => handleUpdateStatus(order.id, 'out for delivery')}
+                              className={cn(
+                                "px-2 py-0.5 rounded text-[8.5px] font-black uppercase tracking-tight transition-all cursor-pointer flex items-center gap-1",
+                                order.status === 'out for delivery' ? "bg-sky-600 text-white shadow-2xs" : "text-neutral-600 hover:bg-neutral-200"
+                              )}
+                            >
+                              🛵 Delivery
+                            </button>
+                            <button
+                              type="button"
+                              title="Set Driver Status: Delivered"
+                              onClick={() => handleUpdateStatus(order.id, 'delivered')}
+                              className={cn(
+                                "px-2 py-0.5 rounded text-[8.5px] font-black uppercase tracking-tight transition-all cursor-pointer flex items-center gap-1",
+                                order.status === 'delivered' ? "bg-emerald-600 text-white shadow-2xs" : "text-neutral-600 hover:bg-neutral-200"
+                              )}
+                            >
+                              ✅ Done
+                            </button>
+                          </div>
                         </td>
                         <td className="px-4 py-4 text-right">
                           <button 
@@ -1228,6 +1430,503 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
                 </div>
               </div>
             )}
+
+            {activeTab === 'driver' && (
+              <div className="space-y-6 text-left">
+                {/* Driver Dispatcher Header Card */}
+                <div className="bg-gradient-to-r from-neutral-900 via-neutral-850 to-neutral-900 text-white p-6 rounded-md shadow-md border border-neutral-800 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+                    <Truck size={160} className="text-daraz-orange" />
+                  </div>
+                  
+                  <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                    <div className="flex items-center gap-4">
+                      <div className="h-14 w-14 rounded-full bg-daraz-orange/20 border-2 border-daraz-orange flex items-center justify-center text-2xl shadow-inner shrink-0">
+                        👨🏽‍✈️
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-lg font-black uppercase tracking-tight text-white">Driver Dispatch Console</h2>
+                          <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[9px] font-black uppercase px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Live Telemetry Sync
+                          </span>
+                        </div>
+                        <p className="text-xs text-neutral-300 font-medium mt-0.5">
+                          Assigned Courier: <strong className="text-daraz-orange">Subash Tamang</strong> (Bajaj Pulsar Ba 2 Pa 5620) • KTM Hub Dispatch
+                        </p>
+                        <p className="text-[10px] text-neutral-400 mt-1">
+                          Updates made here automatically reflect in real-time on the customer's live order tracking map & status timeline.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const activeOrders = orders.filter(o => o.status !== 'delivered' && o.status !== 'cancelled');
+                          if (activeOrders.length === 0) {
+                            alert("No active orders available to advance.");
+                            return;
+                          }
+                          for (const ord of activeOrders) {
+                            const cur = (ord.driverStatus || ord.status || '').toLowerCase();
+                            let next = 'in transit';
+                            if (cur === 'pending' || cur === 'processing') next = 'in transit';
+                            else if (cur === 'in transit' || cur === 'in-transit') next = 'out for delivery';
+                            else if (cur === 'out for delivery') next = 'arrived';
+                            else if (cur === 'arrived') next = 'delivered';
+                            
+                            await handleUpdateStatus(ord.id, next, next);
+                          }
+                        }}
+                        className="bg-daraz-orange hover:bg-orange-600 text-white px-4 py-2.5 rounded text-[10px] font-black uppercase tracking-wider flex items-center gap-2 shadow-sm cursor-pointer transition-all"
+                      >
+                        <Zap size={14} /> Auto-Advance All Active Drivers (+1 Step)
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Summary Metric Counters */}
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-6 pt-6 border-t border-neutral-800">
+                    <div className="bg-neutral-800/60 p-3 rounded border border-neutral-700/60 text-center">
+                      <p className="text-[8.5px] font-black text-neutral-400 uppercase tracking-wider">Total Active Orders</p>
+                      <p className="text-xl font-black text-white mt-0.5">{orders.filter(o => o.status !== 'cancelled').length}</p>
+                    </div>
+                    <div className="bg-neutral-800/60 p-3 rounded border border-neutral-700/60 text-center">
+                      <p className="text-[8.5px] font-black text-purple-400 uppercase tracking-wider">🚚 In Transit</p>
+                      <p className="text-xl font-black text-purple-300 mt-0.5">
+                        {orders.filter(o => (o.driverStatus || o.status || '').toLowerCase().includes('transit')).length}
+                      </p>
+                    </div>
+                    <div className="bg-neutral-800/60 p-3 rounded border border-neutral-700/60 text-center">
+                      <p className="text-[8.5px] font-black text-sky-400 uppercase tracking-wider">🛵 Out for Delivery</p>
+                      <p className="text-xl font-black text-sky-300 mt-0.5">
+                        {orders.filter(o => (o.driverStatus || o.status || '').toLowerCase().includes('out for delivery')).length}
+                      </p>
+                    </div>
+                    <div className="bg-neutral-800/60 p-3 rounded border border-neutral-700/60 text-center">
+                      <p className="text-[8.5px] font-black text-emerald-400 uppercase tracking-wider">📍 Arrived at Location</p>
+                      <p className="text-xl font-black text-emerald-300 mt-0.5">
+                        {orders.filter(o => (o.driverStatus || o.status || '').toLowerCase().includes('arrived')).length}
+                      </p>
+                    </div>
+                    <div className="bg-neutral-800/60 p-3 rounded border border-neutral-700/60 text-center">
+                      <p className="text-[8.5px] font-black text-green-400 uppercase tracking-wider">✅ Delivered Today</p>
+                      <p className="text-xl font-black text-green-300 mt-0.5">
+                        {orders.filter(o => (o.driverStatus || o.status || '').toLowerCase() === 'delivered').length}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Driver Fleet Roster & Fleet Management */}
+                <div className="bg-white rounded-md border border-neutral-200 overflow-hidden shadow-sm">
+                  <div className="p-4 bg-neutral-50 border-b border-neutral-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div>
+                      <h3 className="text-xs font-black uppercase tracking-wider text-neutral-800 flex items-center gap-2">
+                        👨🏽‍✈️ Courier Fleet & Driver Roster ({drivers.length} Drivers)
+                      </h3>
+                      <p className="text-[10px] text-neutral-500 font-medium">
+                        Manage active drivers, update phone numbers, vehicle details directly or register new drivers for delivery dispatches.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-between sm:justify-end">
+                      {/* View Switcher */}
+                      <div className="bg-neutral-200/80 p-0.5 rounded flex items-center gap-0.5 text-[9px] font-black uppercase">
+                        <button
+                          type="button"
+                          onClick={() => setDriverViewMode('direct_table')}
+                          className={cn(
+                            "px-2.5 py-1 rounded transition-colors cursor-pointer",
+                            driverViewMode === 'direct_table' ? "bg-white text-daraz-orange shadow-2xs font-black" : "text-neutral-600 hover:text-neutral-900"
+                          )}
+                        >
+                          ✏️ Direct Editor
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDriverViewMode('cards')}
+                          className={cn(
+                            "px-2.5 py-1 rounded transition-colors cursor-pointer",
+                            driverViewMode === 'cards' ? "bg-white text-daraz-orange shadow-2xs font-black" : "text-neutral-600 hover:text-neutral-900"
+                          )}
+                        >
+                          🎴 Cards View
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingDriver(null);
+                          setDriverFormData({
+                            name: '',
+                            phone: '',
+                            vehicle: '',
+                            hub: 'Kathmandu Central Hub',
+                            status: 'On Duty'
+                          });
+                          setShowAddDriverModal(true);
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm cursor-pointer transition-all"
+                      >
+                        <Plus size={14} /> Add Driver
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* DIRECT TABLE EDITOR MODE */}
+                  {driverViewMode === 'direct_table' ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-neutral-100/80 text-[9px] font-black uppercase tracking-wider text-neutral-600 border-b border-neutral-200">
+                            <th className="p-3">Driver Name</th>
+                            <th className="p-3">Phone Number</th>
+                            <th className="p-3">Vehicle Details</th>
+                            <th className="p-3">Dispatch Hub</th>
+                            <th className="p-3">Duty Status</th>
+                            <th className="p-3 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-neutral-200/80 text-xs font-semibold">
+                          {drivers.map((drv) => (
+                            <tr key={drv.id} className="hover:bg-amber-50/30 transition-colors">
+                              {/* Driver Name Input */}
+                              <td className="p-2.5">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm">👨🏽‍✈️</span>
+                                  <input
+                                    type="text"
+                                    value={drv.name}
+                                    onChange={(e) => handleDirectUpdateDriver(drv.id, 'name', e.target.value)}
+                                    placeholder="Driver name..."
+                                    className="bg-white border border-neutral-300 rounded px-2 py-1 text-xs font-bold text-neutral-900 focus:border-daraz-orange focus:ring-1 focus:ring-daraz-orange outline-none w-full max-w-[160px]"
+                                  />
+                                </div>
+                              </td>
+
+                              {/* Direct Phone Input */}
+                              <td className="p-2.5">
+                                <input
+                                  type="text"
+                                  value={drv.phone}
+                                  onChange={(e) => handleDirectUpdateDriver(drv.id, 'phone', e.target.value)}
+                                  placeholder="Phone number..."
+                                  className="bg-white border border-neutral-300 rounded px-2 py-1 text-xs font-bold text-daraz-orange focus:border-daraz-orange focus:ring-1 focus:ring-daraz-orange outline-none w-full max-w-[150px]"
+                                />
+                              </td>
+
+                              {/* Direct Vehicle Input */}
+                              <td className="p-2.5">
+                                <input
+                                  type="text"
+                                  value={drv.vehicle}
+                                  onChange={(e) => handleDirectUpdateDriver(drv.id, 'vehicle', e.target.value)}
+                                  placeholder="Vehicle info..."
+                                  className="bg-white border border-neutral-300 rounded px-2 py-1 text-xs font-medium text-neutral-800 focus:border-daraz-orange focus:ring-1 focus:ring-daraz-orange outline-none w-full max-w-[180px]"
+                                />
+                              </td>
+
+                              {/* Dispatch Hub Select */}
+                              <td className="p-2.5">
+                                <select
+                                  value={drv.hub}
+                                  onChange={(e) => handleDirectUpdateDriver(drv.id, 'hub', e.target.value)}
+                                  className="bg-white border border-neutral-300 rounded px-2 py-1 text-[11px] font-bold text-neutral-800 focus:border-daraz-orange outline-none cursor-pointer"
+                                >
+                                  <option value="Kathmandu Central Hub">Kathmandu Central Hub</option>
+                                  <option value="Lalitpur Hub">Lalitpur Hub</option>
+                                  <option value="Bhaktapur Hub">Bhaktapur Hub</option>
+                                  <option value="Thamel Dispatch Hub">Thamel Dispatch Hub</option>
+                                </select>
+                              </td>
+
+                              {/* Duty Status Select */}
+                              <td className="p-2.5">
+                                <select
+                                  value={drv.status}
+                                  onChange={(e) => handleDirectUpdateDriver(drv.id, 'status', e.target.value)}
+                                  className={cn(
+                                    "border rounded px-2 py-1 text-[10px] font-black uppercase outline-none cursor-pointer",
+                                    drv.status === 'On Duty' ? "bg-emerald-50 text-emerald-800 border-emerald-300" :
+                                    drv.status === 'In Transit' ? "bg-amber-50 text-amber-800 border-amber-300" :
+                                    "bg-neutral-100 text-neutral-700 border-neutral-300"
+                                  )}
+                                >
+                                  <option value="On Duty">🟢 On Duty</option>
+                                  <option value="In Transit">🚚 In Transit</option>
+                                  <option value="Off Duty">🔴 Off Duty</option>
+                                </select>
+                              </td>
+
+                              {/* Action Buttons */}
+                              <td className="p-2.5 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setEditingDriver(drv);
+                                      setDriverFormData({
+                                        name: drv.name,
+                                        phone: drv.phone,
+                                        vehicle: drv.vehicle,
+                                        hub: drv.hub,
+                                        status: drv.status
+                                      });
+                                      setShowAddDriverModal(true);
+                                    }}
+                                    title="Open Full Modal Editor"
+                                    className="p-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded text-[10px] font-bold cursor-pointer transition-colors"
+                                  >
+                                    ✏️
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteDriver(drv.id, drv.name)}
+                                    title="Delete Driver"
+                                    className="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded text-[10px] font-bold cursor-pointer transition-colors"
+                                  >
+                                    🗑️
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    /* CARDS GRID VIEW */
+                    <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {drivers.map((drv) => (
+                        <div key={drv.id} className="bg-neutral-50/80 p-3.5 rounded-lg border border-neutral-200 space-y-2.5 relative flex flex-col justify-between hover:border-neutral-300 transition-all">
+                          <div className="space-y-1.5">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <div className="h-9 w-9 rounded-full bg-daraz-orange/15 border border-daraz-orange/30 flex items-center justify-center text-sm font-black shrink-0">
+                                  👨🏽‍✈️
+                                </div>
+                                <div>
+                                  <h4 className="text-xs font-black text-neutral-900 leading-tight">{drv.name}</h4>
+                                  <span className="text-[9px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200">⭐ {drv.rating}</span>
+                                </div>
+                              </div>
+                              <span className={cn(
+                                "text-[8px] font-black uppercase px-1.5 py-0.5 rounded border",
+                                drv.status === 'On Duty' ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-neutral-100 text-neutral-600 border-neutral-200"
+                              )}>
+                                {drv.status}
+                              </span>
+                            </div>
+
+                            <div className="text-[10.5px] space-y-0.5 text-neutral-600 font-medium pt-1">
+                              <p className="flex items-center gap-1 font-bold text-daraz-orange">
+                                📞 {drv.phone}
+                              </p>
+                              <p className="flex items-center gap-1">
+                                🛵 {drv.vehicle}
+                              </p>
+                              <p className="text-[9.5px] text-neutral-400 font-semibold">
+                                📍 {drv.hub}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="pt-2 border-t border-neutral-200/80 flex items-center justify-between gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingDriver(drv);
+                                setDriverFormData({
+                                  name: drv.name,
+                                  phone: drv.phone,
+                                  vehicle: drv.vehicle,
+                                  hub: drv.hub,
+                                  status: drv.status
+                                });
+                                setShowAddDriverModal(true);
+                              }}
+                              className="flex-1 py-1.5 bg-white hover:bg-neutral-100 text-neutral-800 border border-neutral-250 text-[9px] font-black uppercase rounded text-center cursor-pointer transition-colors"
+                            >
+                              ✏️ Edit Driver Info
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteDriver(drv.id, drv.name)}
+                              className="px-2 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-[9px] font-black uppercase rounded text-center cursor-pointer transition-colors"
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Driver Order Management List */}
+                <div className="bg-white rounded-md border border-neutral-200 overflow-hidden shadow-sm">
+                  <div className="p-4 bg-neutral-50 border-b border-neutral-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div>
+                      <h3 className="text-xs font-black uppercase tracking-wider text-neutral-800 flex items-center gap-2">
+                        <Truck size={16} className="text-daraz-orange" /> Driver Delivery Status & Assignment Controller
+                      </h3>
+                      <p className="text-[10px] text-neutral-500 font-medium">
+                        Assign drivers to orders or change the assigned driver. Updates sync in real-time to the customer's app.
+                      </p>
+                    </div>
+                    <span className="text-[9px] font-bold text-neutral-500 uppercase bg-white px-2.5 py-1 border border-neutral-200 rounded">
+                      {orders.length} Order Documents
+                    </span>
+                  </div>
+
+                  {orders.length === 0 ? (
+                    <div className="p-12 text-center text-neutral-400">
+                      <Truck size={36} className="mx-auto mb-2 text-neutral-300" />
+                      <p className="text-xs font-black uppercase">No delivery orders found</p>
+                      <p className="text-[10px] text-neutral-400 mt-1">Place an order from the shop or cart to test live driver status toggles.</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-neutral-150">
+                      {orders.map((order) => {
+                        const currentStatus = (order.driverStatus || order.status || 'pending').toLowerCase();
+                        const currentDriverName = order.driverName || 'Subash Tamang';
+                        const currentDriverPhone = order.driverPhone || '+977 981-3255901';
+                        const currentDriverVehicle = order.driverVehicle || 'Bajaj Pulsar (Ba 2 Pa 5620)';
+                        
+                        return (
+                          <div key={order.id} className="p-5 hover:bg-neutral-50/80 transition-colors space-y-3">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-mono text-xs font-black text-neutral-900 uppercase tracking-tight bg-neutral-100 px-2 py-0.5 rounded border border-neutral-200">
+                                    #{order.id.substring(0, 8).toUpperCase()}
+                                  </span>
+                                  <span className="text-xs font-black text-neutral-800">
+                                    {order.address?.fullName || order.customerName || 'Customer'}
+                                  </span>
+                                  <span className="text-[10px] text-neutral-500 font-bold">
+                                    ({order.address?.phone || 'No Phone'})
+                                  </span>
+                                </div>
+                                <p className="text-[11px] text-neutral-600 font-medium">
+                                  📍 {order.address?.address || order.address?.details || 'Kathmandu'}, {order.address?.area?.name || order.address?.area || 'Baneshwor'}
+                                </p>
+                              </div>
+
+                              <div className="flex items-center gap-3 shrink-0">
+                                <div className="text-right">
+                                  <p className="text-xs font-black text-daraz-orange">{formatCurrency(order.total)}</p>
+                                  <p className="text-[9px] font-bold text-neutral-400 uppercase">{order.items?.length || 1} Item(s) • {order.method}</p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedOrder(order)}
+                                  className="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-[9px] font-black uppercase rounded tracking-wider cursor-pointer border border-neutral-200"
+                                >
+                                  View Details
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Assigned Driver Box & Driver Selection Dropdown */}
+                            <div className="bg-amber-50/60 p-3 rounded border border-amber-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                              <div className="flex items-center gap-2">
+                                <div className="h-8 w-8 rounded-full bg-daraz-orange text-white flex items-center justify-center text-xs font-black shrink-0">
+                                  👨🏽‍✈️
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[9px] font-black uppercase tracking-wider text-amber-900">Assigned Driver:</span>
+                                    <span className="text-xs font-black text-neutral-900">{currentDriverName}</span>
+                                    <span className="text-[10px] font-bold text-daraz-orange">({currentDriverPhone})</span>
+                                  </div>
+                                  <p className="text-[10px] text-neutral-500 font-medium">
+                                    🛵 {currentDriverVehicle}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Assign / Change Driver Select */}
+                              <div className="flex items-center gap-2 w-full sm:w-auto">
+                                <span className="text-[9px] font-black text-neutral-500 uppercase whitespace-nowrap">Change Driver:</span>
+                                <select
+                                  value={drivers.find(d => d.name === currentDriverName)?.id || drivers[0]?.id}
+                                  onChange={(e) => {
+                                    const selectedDrv = drivers.find(d => d.id === e.target.value);
+                                    if (selectedDrv) {
+                                      handleAssignDriverToOrder(order.id, selectedDrv);
+                                    }
+                                  }}
+                                  className="bg-white border border-neutral-300 text-neutral-800 text-[10px] font-bold p-1.5 rounded outline-none focus:border-daraz-orange cursor-pointer w-full sm:w-auto"
+                                >
+                                  {drivers.map(d => (
+                                    <option key={d.id} value={d.id}>
+                                      👨🏽‍✈️ {d.name} ({d.phone}) - {d.vehicle}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+
+                            {/* Driver Status Toggle Buttons Grid */}
+                            <div className="bg-neutral-50 p-3 rounded border border-neutral-200/80 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[9px] font-black uppercase tracking-wider text-neutral-500">
+                                  Set Simulated Driver Status:
+                                </span>
+                                <span className={cn(
+                                  "text-[9.5px] font-black uppercase px-2 py-0.5 rounded border tracking-tight",
+                                  currentStatus === 'pending' || currentStatus === 'processing' ? "bg-amber-50 text-amber-800 border-amber-200" :
+                                  currentStatus === 'in transit' || currentStatus === 'in-transit' ? "bg-purple-50 text-purple-800 border-purple-200" :
+                                  currentStatus === 'out for delivery' ? "bg-sky-50 text-sky-800 border-sky-200" :
+                                  currentStatus === 'arrived' ? "bg-emerald-100 text-emerald-800 border-emerald-300 animate-pulse" :
+                                  currentStatus === 'delivered' ? "bg-emerald-50 text-emerald-800 border-emerald-200" :
+                                  "bg-rose-50 text-rose-800 border-rose-200"
+                                )}>
+                                  Current: {currentStatus}
+                                </span>
+                              </div>
+
+                              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                                {[
+                                  { label: 'Preparing', value: 'pending', icon: '🏪', bg: 'hover:bg-amber-50 hover:border-amber-300' },
+                                  { label: 'In Transit', value: 'in transit', icon: '🚚', bg: 'hover:bg-purple-50 hover:border-purple-300' },
+                                  { label: 'Out for Delivery', value: 'out for delivery', icon: '🛵', bg: 'hover:bg-sky-50 hover:border-sky-300' },
+                                  { label: 'Arrived', value: 'arrived', icon: '🏁', bg: 'hover:bg-emerald-50 hover:border-emerald-300' },
+                                  { label: 'Delivered', value: 'delivered', icon: '✅', bg: 'hover:bg-green-50 hover:border-green-300' },
+                                ].map((st) => {
+                                  const isActive = currentStatus === st.value;
+                                  return (
+                                    <button
+                                      key={st.value}
+                                      type="button"
+                                      onClick={() => handleUpdateStatus(order.id, st.value, st.value)}
+                                      className={cn(
+                                        "p-2 rounded text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 border text-[10px] font-black uppercase tracking-tight",
+                                        isActive
+                                          ? "bg-daraz-orange text-white border-daraz-orange shadow-sm scale-102"
+                                          : `bg-white border-neutral-200 text-neutral-700 ${st.bg}`
+                                      )}
+                                    >
+                                      <span className="text-base">{st.icon}</span>
+                                      <span>{st.label}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -1543,8 +2242,57 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
                   </div>
                </div>
 
+               {/* Driver Status Simulator Toggle Panel */}
+               <div className="bg-amber-50/80 border border-amber-200/80 p-4 rounded-md space-y-3">
+                  <div className="flex items-center justify-between">
+                     <div className="flex items-center gap-2">
+                        <Truck className="text-daraz-orange" size={18} />
+                        <h4 className="text-xs font-black uppercase tracking-wider text-neutral-800">
+                          Driver Status Simulator
+                        </h4>
+                     </div>
+                     <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded bg-white border border-amber-300 text-amber-800">
+                        Real-Time Sync to Customer
+                     </span>
+                  </div>
+                  <p className="text-[11px] text-neutral-600 font-medium leading-normal">
+                    Select a driver status below to automatically update the live order status visible to the customer on their Profile / Track Orders screen.
+                  </p>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1">
+                     {[
+                        { label: 'Preparing', value: 'pending', icon: '🏪' },
+                        { label: 'In Transit', value: 'in transit', icon: '🚚' },
+                        { label: 'Out for Delivery', value: 'out for delivery', icon: '🛵' },
+                        { label: 'Delivered', value: 'delivered', icon: '✅' },
+                        { label: 'Cancelled', value: 'cancelled', icon: '❌' }
+                     ].map((st) => {
+                        const isActive = selectedOrder.status === st.value;
+                        return (
+                           <button
+                             key={st.value}
+                             type="button"
+                             onClick={async () => {
+                               await handleUpdateStatus(selectedOrder.id, st.value);
+                               setSelectedOrder({ ...selectedOrder, status: st.value });
+                             }}
+                             className={cn(
+                               "p-2.5 rounded text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1 border text-[10px] font-black uppercase tracking-tight",
+                               isActive
+                                 ? "bg-daraz-orange text-white border-daraz-orange shadow-sm scale-105"
+                                 : "bg-white border-neutral-200 text-neutral-700 hover:border-daraz-orange/50 hover:bg-neutral-50"
+                             )}
+                           >
+                              <span className="text-base">{st.icon}</span>
+                              <span>{st.label}</span>
+                           </button>
+                        );
+                     })}
+                  </div>
+               </div>
+
                {/* Payment & Meta */}
-               <div className="grid grid-cols-2 gap-4 bg-neutral-50 p-4 rounded-sm">
+               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-neutral-50 p-4 rounded-sm border border-neutral-150">
                   <div>
                     <p className="text-[8px] font-black text-neutral-400 uppercase">Payment Method</p>
                     <p className="text-xs font-black text-neutral-800 uppercase tracking-widest">{selectedOrder.method}</p>
@@ -1553,23 +2301,194 @@ export default function AdminDashboard({ products, onAddProduct, onUpdateProduct
                     <p className="text-[8px] font-black text-neutral-400 uppercase">Current Status</p>
                     <p className="text-xs font-black text-daraz-orange uppercase tracking-widest">{selectedOrder.status}</p>
                   </div>
+                  <div>
+                    <p className="text-[8px] font-black text-neutral-400 uppercase">Assigned Driver</p>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <select
+                        value={drivers.find(d => d.name === (selectedOrder.driverName || 'Subash Tamang'))?.id || drivers[0]?.id}
+                        onChange={(e) => {
+                          const selectedDrv = drivers.find(d => d.id === e.target.value);
+                          if (selectedDrv) {
+                            handleAssignDriverToOrder(selectedOrder.id, selectedDrv);
+                            setSelectedOrder({
+                              ...selectedOrder,
+                              driverId: selectedDrv.id,
+                              driverName: selectedDrv.name,
+                              driverPhone: selectedDrv.phone,
+                              driverVehicle: selectedDrv.vehicle
+                            });
+                          }
+                        }}
+                        className="bg-white border border-neutral-300 text-neutral-900 text-[10px] font-bold p-1 rounded outline-none focus:border-daraz-orange cursor-pointer w-full"
+                      >
+                        {drivers.map(d => (
+                          <option key={d.id} value={d.id}>
+                            👨🏽‍✈️ {d.name} ({d.phone})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                </div>
             </div>
             
-            <div className="bg-neutral-50 p-6 border-t border-neutral-100 flex gap-4">
+            <div className="bg-neutral-50 p-6 border-t border-neutral-100 flex flex-wrap gap-3">
                <button 
-                onClick={() => handleUpdateStatus(selectedOrder.id, 'shipped')}
-                className="flex-1 bg-blue-600 text-white py-3 rounded-sm text-[10px] font-black uppercase tracking-widest hover:opacity-90"
+                onClick={async () => {
+                  await handleUpdateStatus(selectedOrder.id, 'in transit');
+                  setSelectedOrder({ ...selectedOrder, status: 'in transit' });
+                }}
+                className="flex-1 bg-purple-600 text-white py-3 rounded-sm text-[10px] font-black uppercase tracking-widest hover:opacity-90 cursor-pointer"
                >
-                Mark as Shipped
+                🚚 Mark In Transit
                </button>
                <button 
-                onClick={() => handleUpdateStatus(selectedOrder.id, 'delivered')}
-                className="flex-1 bg-green-600 text-white py-3 rounded-sm text-[10px] font-black uppercase tracking-widest hover:opacity-90"
+                onClick={async () => {
+                  await handleUpdateStatus(selectedOrder.id, 'out for delivery');
+                  setSelectedOrder({ ...selectedOrder, status: 'out for delivery' });
+                }}
+                className="flex-1 bg-sky-600 text-white py-3 rounded-sm text-[10px] font-black uppercase tracking-widest hover:opacity-90 cursor-pointer"
                >
-                Mark as Delivered
+                🛵 Out for Delivery
+               </button>
+               <button 
+                onClick={async () => {
+                  await handleUpdateStatus(selectedOrder.id, 'delivered');
+                  setSelectedOrder({ ...selectedOrder, status: 'delivered' });
+                }}
+                className="flex-1 bg-emerald-600 text-white py-3 rounded-sm text-[10px] font-black uppercase tracking-widest hover:opacity-90 cursor-pointer"
+               >
+                ✅ Mark Delivered
                </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add / Edit Driver Modal */}
+      {showAddDriverModal && (
+        <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 text-left">
+          <div className="bg-white w-full max-w-md rounded-md shadow-2xl p-6 relative border border-neutral-200">
+            <button 
+              type="button"
+              onClick={() => {
+                setShowAddDriverModal(false);
+                setEditingDriver(null);
+              }}
+              className="absolute top-4 right-4 text-neutral-400 hover:text-neutral-700 p-1 cursor-pointer"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="flex items-center gap-3 mb-5 border-b border-neutral-150 pb-3">
+              <div className="h-10 w-10 rounded-full bg-daraz-orange/10 border border-daraz-orange/30 flex items-center justify-center text-xl shrink-0">
+                👨🏽‍✈️
+              </div>
+              <div>
+                <h2 className="text-base font-black uppercase tracking-tight text-neutral-900">
+                  {editingDriver ? 'Edit Driver Details' : 'Register New Courier Driver'}
+                </h2>
+                <p className="text-[10px] text-neutral-500 font-medium">
+                  {editingDriver ? 'Update driver phone number, vehicle plate or dispatch hub' : 'Add a new courier driver to your delivery roster'}
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveDriver} className="space-y-4">
+              <div>
+                <label className="block text-[10px] font-black text-neutral-700 uppercase tracking-wider mb-1">
+                  Driver Full Name *
+                </label>
+                <input 
+                  type="text"
+                  required
+                  value={driverFormData.name}
+                  onChange={e => setDriverFormData({ ...driverFormData, name: e.target.value })}
+                  placeholder="e.g. Subash Tamang"
+                  className="w-full bg-neutral-50 border border-neutral-300 rounded p-2.5 text-xs text-neutral-900 font-bold focus:border-daraz-orange focus:bg-white outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-neutral-700 uppercase tracking-wider mb-1">
+                  Driver Phone Number *
+                </label>
+                <input 
+                  type="text"
+                  required
+                  value={driverFormData.phone}
+                  onChange={e => setDriverFormData({ ...driverFormData, phone: e.target.value })}
+                  placeholder="e.g. +977 981-3255901"
+                  className="w-full bg-neutral-50 border border-neutral-300 rounded p-2.5 text-xs text-neutral-900 font-bold focus:border-daraz-orange focus:bg-white outline-none"
+                />
+                <p className="text-[9px] text-neutral-400 mt-1">Customers will be able to call this phone number directly from their live order map.</p>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-neutral-700 uppercase tracking-wider mb-1">
+                  Vehicle Model & License Plate Number
+                </label>
+                <input 
+                  type="text"
+                  value={driverFormData.vehicle}
+                  onChange={e => setDriverFormData({ ...driverFormData, vehicle: e.target.value })}
+                  placeholder="e.g. Bajaj Pulsar (Ba 2 Pa 5620)"
+                  className="w-full bg-neutral-50 border border-neutral-300 rounded p-2.5 text-xs text-neutral-900 font-bold focus:border-daraz-orange focus:bg-white outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-black text-neutral-700 uppercase tracking-wider mb-1">
+                    Dispatch Hub
+                  </label>
+                  <select
+                    value={driverFormData.hub}
+                    onChange={e => setDriverFormData({ ...driverFormData, hub: e.target.value })}
+                    className="w-full bg-neutral-50 border border-neutral-300 rounded p-2.5 text-xs text-neutral-900 font-bold focus:border-daraz-orange focus:bg-white outline-none cursor-pointer"
+                  >
+                    <option value="Kathmandu Central Hub">Kathmandu Central Hub</option>
+                    <option value="Lalitpur Hub">Lalitpur Hub</option>
+                    <option value="Bhaktapur Hub">Bhaktapur Hub</option>
+                    <option value="Thamel Dispatch Hub">Thamel Dispatch Hub</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-neutral-700 uppercase tracking-wider mb-1">
+                    Duty Status
+                  </label>
+                  <select
+                    value={driverFormData.status}
+                    onChange={e => setDriverFormData({ ...driverFormData, status: e.target.value })}
+                    className="w-full bg-neutral-50 border border-neutral-300 rounded p-2.5 text-xs text-neutral-900 font-bold focus:border-daraz-orange focus:bg-white outline-none cursor-pointer"
+                  >
+                    <option value="On Duty">🟢 On Duty</option>
+                    <option value="In Transit">🚚 In Transit</option>
+                    <option value="Off Duty">🔴 Off Duty</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-neutral-150 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddDriverModal(false);
+                    setEditingDriver(null);
+                  }}
+                  className="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-xs font-black uppercase rounded cursor-pointer transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-daraz-orange hover:bg-orange-600 text-white text-xs font-black uppercase rounded cursor-pointer transition-colors shadow-sm flex items-center gap-1.5"
+                >
+                  <Save size={14} /> {editingDriver ? 'Save Driver Changes' : 'Register Driver'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

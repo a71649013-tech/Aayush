@@ -73,7 +73,8 @@ export interface Order {
   customerName: string;
   items: CartItem[];
   total: number;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'delayed';
+  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'delayed' | 'In Transit' | 'Out for Delivery';
+  driverStatus?: string;
   method: string;
   address: Address;
   createdAt: any;
